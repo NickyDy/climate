@@ -6,10 +6,10 @@ library(rOstluft.plot)
 glimpse(yambol)
 yambol %>% map_dfr(~ sum(is.na(.)))
 
-mad <- weather_history(
-  location = "Madrid",
+df <- weather_history(
+  location = "Yambol",
   start = "1940-01-01",
-  end = "2023-04-30",
+  end = "2023-05-04",
   daily = c("temperature_2m_min", "temperature_2m_mean",
             "temperature_2m_max", "precipitation_sum",
             "snowfall_sum", "windspeed_10m_max",
@@ -22,7 +22,7 @@ mad <- weather_history(
          month = factor(month(date)),
          day = factor(day(date)), .after = date)
 
-mad %>% 
+df %>% 
   filter(month == 4) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>% 
@@ -36,7 +36,7 @@ mad %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Средна годишна температура (ºС)", fill = NULL)
 
-mad %>% 
+df %>% 
   filter(month == 4) %>% 
   group_by(year) %>% 
   summarise(p = round(sum(prec_sum, na.rm = T), 0)) %>% 
@@ -51,7 +51,7 @@ mad %>%
   labs(x = "Години", y = "Годишно количество на валежите (mm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
 
-mad %>% 
+df %>% 
   filter(month == 4) %>%
   group_by(year) %>% 
   summarise(s = round(sum(snow_sum, na.rm = T), 0)) %>% 
@@ -66,7 +66,7 @@ mad %>%
   labs(x = "Години", y = "Годишно количество на снега (cm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
 
-mad %>% 
+df %>% 
   filter(month == 4) %>% 
   group_by(year) %>% 
   summarise(w = round(mean(wind_max, na.rm = T), 1)) %>% 
@@ -80,7 +80,7 @@ mad %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Средна скорост на вятъра (km/h)", fill = NULL)
 
-mad %>% 
+df %>% 
   filter(year %in% c(1940:2023), month %in% c(4)) %>% 
   ggradar(wind_dir, wind_max, 
           fill = "blue", color = "blue", alpha = 0.5, show.legend = FALSE,
