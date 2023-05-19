@@ -84,12 +84,12 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
 	drop_na() %>% 
-	filter(month %in% c(5), elev < 1200) %>%
+	filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
 	group_by(year) %>% 
 	summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
 	drop_na() %>% 
-  filter(month %in% c(5), elev < 1200) %>%
+  filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
   mutate(m = mean(temp)) %>%
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -105,6 +105,35 @@ temp %>%
 	scale_x_discrete(labels = paste0(mean_temp_month$year, "\n(n = ", mean_temp_month$n, ")")) +
 	guides(fill = guide_legend(reverse = TRUE))
 
+med_rain_month <- rain %>% 
+  drop_na() %>% 
+  filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
+  group_by(station, year, month) %>%
+  mutate(sum = sum(rain)) %>%
+  group_by(month, year) %>% 
+  summarise(m = round(median(sum), 2), n = n())
+rain %>% 
+  drop_na() %>% 
+  filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
+  group_by(station, year, month) %>%
+  mutate(sum = sum(rain)) %>%
+  ungroup() %>%
+  mutate(su = median(sum)) %>%
+  group_by(year) %>%
+  mutate(col = median(sum) > su) %>% 
+  ggplot(aes(year, sum)) +
+  geom_boxplot(aes(fill = col)) +
+  geom_text(data = med_rain_month, aes(year, m, label = m), 
+            position = position_dodge(width = 1), size = 4, vjust = -1) +
+  geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
+  labs(x = "Години", y = "Средно месечно количество на валежите (mm)", fill = "Легенда:", 
+       title = "Месец: Май") +
+  theme(text = element_text(size = 14), legend.position = "right") +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
+  scale_y_continuous(n.breaks = 10) +
+  scale_x_discrete(labels = paste0(med_rain_month$year, "\n(n = ", med_rain_month$n, ")")) +
+  guides(fill = guide_legend(reverse = TRUE))
+#--------------------------------------------
 mean_temp_year <- temp %>% 
 	drop_na() %>% 
 	filter(elev < 1200) %>%
@@ -127,35 +156,6 @@ temp %>%
   scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студена", "Топла")) +
 	scale_y_continuous(n.breaks = 20) +
 	scale_x_discrete(labels = paste0(mean_temp_year$year, "\n(n = ", mean_temp_year$n, ")")) +
-	guides(fill = guide_legend(reverse = TRUE))
-
-med_rain_month <- rain %>% 
-	drop_na() %>% 
-	filter(month %in% c(5), elev < 1200) %>%
-	group_by(station, year, month) %>%
-	mutate(sum = sum(rain)) %>%
-	group_by(month, year) %>% 
-	summarise(m = round(median(sum), 2), n = n())
-rain %>% 
-	drop_na() %>% 
-  filter(month %in% c(5), elev < 1200) %>%
-  group_by(station, year, month) %>%
-  mutate(sum = sum(rain)) %>%
-  ungroup() %>%
-  mutate(su = median(sum)) %>%
-  group_by(year) %>%
-  mutate(col = median(sum) > su) %>% 
-  ggplot(aes(year, sum)) +
-  geom_boxplot(aes(fill = col)) +
-	geom_text(data = med_rain_month, aes(year, m, label = m), 
-						position = position_dodge(width = 1), size = 4, vjust = -1) +
-  geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Години", y = "Средно месечно количество на валежите (mm)", fill = "Легенда:", 
-       title = "Месец: Май") +
-  theme(text = element_text(size = 14), legend.position = "right") +
-	scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
-	scale_y_continuous(n.breaks = 10) +
-	scale_x_discrete(labels = paste0(med_rain_month$year, "\n(n = ", med_rain_month$n, ")")) +
 	guides(fill = guide_legend(reverse = TRUE))
 
 med_rain_year <- rain %>% 

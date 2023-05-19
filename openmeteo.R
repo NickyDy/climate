@@ -7,9 +7,9 @@ glimpse(yambol)
 yambol %>% map_dfr(~ sum(is.na(.)))
 
 df <- weather_history(
-  location = "Yambol",
+  location = "Primorsko",
   start = "1940-01-01",
-  end = "2023-05-04",
+  end = "2023-05-19",
   daily = c("temperature_2m_min", "temperature_2m_mean",
             "temperature_2m_max", "precipitation_sum",
             "snowfall_sum", "windspeed_10m_max",
@@ -23,9 +23,9 @@ df <- weather_history(
          day = factor(day(date)), .after = date)
 
 df %>% 
-  filter(month == 4) %>% 
+  filter(month == 5, day %in% c(1:19)) %>% 
   group_by(year) %>% 
-  summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>% 
+  summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>%
   mutate(col = m < mean(m)) %>% 
   ggplot(aes(year, m, fill = col)) +
   geom_col() +
@@ -37,7 +37,7 @@ df %>%
   labs(x = "Години", y = "Средна годишна температура (ºС)", fill = NULL)
 
 df %>% 
-  filter(month == 4) %>% 
+  filter(month == 5, day %in% c(1:19)) %>% 
   group_by(year) %>% 
   summarise(p = round(sum(prec_sum, na.rm = T), 0)) %>% 
   mutate(col = p > mean(p)) %>% 
@@ -52,7 +52,7 @@ df %>%
   guides(fill = guide_legend(reverse = TRUE))
 
 df %>% 
-  filter(month == 4) %>%
+  filter(month == 5, day %in% c(1:19)) %>%
   group_by(year) %>% 
   summarise(s = round(sum(snow_sum, na.rm = T), 0)) %>% 
   mutate(col = s > mean(s)) %>% 
@@ -67,7 +67,7 @@ df %>%
   guides(fill = guide_legend(reverse = TRUE))
 
 df %>% 
-  filter(month == 4) %>% 
+  filter(month == 5, day %in% c(1:19)) %>% 
   group_by(year) %>% 
   summarise(w = round(mean(wind_max, na.rm = T), 1)) %>% 
   mutate(col = w < mean(w)) %>% 
@@ -81,7 +81,7 @@ df %>%
   labs(x = "Години", y = "Средна скорост на вятъра (km/h)", fill = NULL)
 
 df %>% 
-  filter(year %in% c(1940:2023), month %in% c(4)) %>% 
+  filter(year %in% c(1940:2023), month %in% c(5), day %in% c(1:19)) %>% 
   ggradar(wind_dir, wind_max, 
           fill = "blue", color = "blue", alpha = 0.5, show.legend = FALSE,
           facet_groups = grp(year)) +
