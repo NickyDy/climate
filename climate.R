@@ -6,7 +6,7 @@ temp <- read_rds("~/Desktop/R/climate/temp.rds")
 
 rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
 	html_element("table") %>% html_table() %>%
-	select(2:17, 19:34) %>% slice(12:21, 25:37) %>%
+	select(2:17, 19:34) %>% slice(12:21, 25:34, 38:42) %>%
 	rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -19,7 +19,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
       							 "Обзор", "Дупница", "Орландовци", "Бояна", "Княжево", "Панагюрище",
       							 "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial"), 
     .after = station,
-    year = 2023, month = 5,
+    year = 2023, month = 6,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -57,7 +57,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
       							 "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
       							 "Кълъраш Р.", "Одрин Т.", "Рилци") ~ "unofficial"), 
     .after = station,
-    year = 2023, month = 5,
+    year = 2023, month = 6,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -84,12 +84,12 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
 	drop_na() %>% 
-	filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
+	filter(month %in% c(6), elev < 1200) %>%
 	group_by(year) %>% 
 	summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
 	drop_na() %>% 
-  filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
+  filter(month %in% c(6), elev < 1200) %>%
   mutate(m = mean(temp)) %>%
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -98,7 +98,7 @@ temp %>%
 	geom_point(data = mean_temp_month, aes(year, m), color = "blue") +
 	geom_text(data = mean_temp_month, aes(year, m, label = m), size = 4, vjust = -2) +
 	geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
-	labs(x = "Години", y = "Средна месечна температура (ºС)", fill = "Легенда:", title = "Месец: Май") +
+	labs(x = "Години", y = "Средна месечна температура (ºС)", fill = "Легенда:", title = "Месец: Юни") +
   theme(text = element_text(size = 14), legend.position = "right") +
 	scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студен", "Топъл")) +
 	scale_y_continuous(n.breaks = 10) +
@@ -107,14 +107,14 @@ temp %>%
 
 med_rain_month <- rain %>% 
   drop_na() %>% 
-  filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
+  filter(month %in% c(6), elev < 1200) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   group_by(month, year) %>% 
   summarise(m = round(median(sum), 2), n = n())
 rain %>% 
   drop_na() %>% 
-  filter(month %in% c(5), elev < 1200, day %in% c(1:19)) %>%
+  filter(month %in% c(6), elev < 1200) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
@@ -127,7 +127,7 @@ rain %>%
             position = position_dodge(width = 1), size = 4, vjust = -1) +
   geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средно месечно количество на валежите (mm)", fill = "Легенда:", 
-       title = "Месец: Май") +
+       title = "Месец: Юни") +
   theme(text = element_text(size = 14), legend.position = "right") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
   scale_y_continuous(n.breaks = 10) +
@@ -149,7 +149,7 @@ temp %>%
   geom_boxplot(aes(fill = col)) +
 	geom_point(data = mean_temp_year, aes(year, m), color = "blue") +
 	geom_text(data = mean_temp_year, aes(year, m, label = m), 
-						position = position_dodge(width = 1), size = 4, vjust = -3) +
+						position = position_dodge(width = 1), size = 4, vjust = -2) +
 	geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средна годишна температура (ºС)", fill = "Легенда:") +
   theme(text = element_text(size = 14), legend.position = "right") +
@@ -177,7 +177,7 @@ rain %>%
   ggplot(aes(year, sum)) +
   geom_boxplot(aes(fill = col)) +
 	geom_text(data = med_rain_year, aes(year, m, label = m), 
-						position = position_dodge(width = 1), size = 4, vjust = -2) +
+						position = position_dodge(width = 1), size = 4, vjust = -1) +
 	geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средно годишно количество на валежите (mm)", fill = "Легенда:") +
   theme(text = element_text(size = 14), legend.position = "right") +
