@@ -84,12 +84,12 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
 	drop_na() %>% 
-	filter(month %in% c(6), elev < 1200) %>%
+	filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
 	group_by(year) %>% 
 	summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
 	drop_na() %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
   mutate(m = mean(temp)) %>%
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -107,14 +107,14 @@ temp %>%
 
 med_rain_month <- rain %>% 
   drop_na() %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   group_by(month, year) %>% 
   summarise(m = round(median(sum), 2), n = n())
 rain %>% 
   drop_na() %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%

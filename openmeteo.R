@@ -1,15 +1,17 @@
-library(openmeteo)
 library(tidyverse)
+library(openmeteo)
 library(lubridate)
 library(rOstluft.plot)
 
+df <- read_rds("climate/meteo.rds")
+
 glimpse(yambol)
-yambol %>% map_dfr(~ sum(is.na(.)))
+df %>% map_dfr(~ sum(is.na(.)))
 
 df <- weather_history(
   location = "Yambol",
-  start = "1940-01-01",
-  end = "2023-05-26",
+  start = "2023-01-01",
+  end = "2023-06-16",
   daily = c("temperature_2m_min", "temperature_2m_mean",
             "temperature_2m_max", "precipitation_sum",
             "snowfall_sum", "windspeed_10m_max",
@@ -20,10 +22,32 @@ df <- weather_history(
          "wind_dir" = "daily_winddirection_10m_dominant") %>% 
   mutate(year = factor(year(date)),
          month = factor(month(date)),
-         day = factor(day(date)), .after = date)
+         day = factor(day(date)), 
+         location = "Yambol", .after = date)
 
+# Temperatures------------------------------
+mean_temp <- df %>%
+  filter(month %in% c(6, 7, 8)) %>%
+  group_by(year) %>% 
+  summarise(m = round(mean(temp_mean, na.rm = T), 1),	n = n())
+df %>%
+  filter(month %in% c(6, 7, 8)) %>%
+  mutate(m = mean(temp_mean, na.rm = T)) %>%
+  group_by(year) %>%
+  mutate(col = mean(temp_mean, na.rm = T) > m) %>%
+  ggplot(aes(year, temp_mean)) +
+  geom_boxplot(aes(fill = col), outlier.color = NA) +
+  geom_point(data = mean_temp, aes(year, m), color = "blue", size = 1) +
+  #geom_text(data = mean_temp, aes(year, m, label = m), size = 3, position = "fill", vjust = 40) +
+  geom_hline(aes(yintercept = mean(temp_mean, na.rm = T)), linewidth = 0.5, lty = 2, color = "black") +
+  labs(x = "Години", y = "Средна месечна температура (ºС)", fill = "Легенда:") +
+  theme(text = element_text(size = 12), legend.position = "right",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студена", "Топла")) +
+  scale_y_continuous(n.breaks = 10) +
+  guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(month == 5, day %in% c(1:31)) %>% 
+  filter(month %in% c(6), day %in% c(1:31)) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>%
   mutate(col = m < mean(m)) %>% 
@@ -31,15 +55,43 @@ df %>%
   geom_col() +
   geom_hline(aes(yintercept = mean(m)), linewidth = 0.5, lty = 2, color = "black") +
   geom_text(aes(label = m), size = 3, vjust = -0.5) +
-  scale_y_continuous(n.breaks = 10, expand = expansion(mult = c(.01, .05))) +
+  scale_y_continuous(expand = expansion(mult = c(.01, .05))) +
   scale_fill_discrete(labels = c("Топла", "Студена")) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Средна годишна температура (ºС)", fill = NULL)
 
+# Rain--------------------
+med_rain <- df %>% 
+  #filter(location == "Yambol") %>%
+  group_by(location, year) %>%
+  mutate(sum = sum(prec_sum, na.rm = T)) %>%
+  group_by(month, year) %>% 
+  summarise(m = round(median(sum, na.rm = T), 2), n = n())
 df %>% 
-  filter(month == 5, day %in% c(1:31)) %>% 
+  #filter(location == "Yambol") %>%
+  group_by(location, year) %>%
+  mutate(sum = sum(prec_sum, na.rm = T)) %>%
+  ungroup() %>%
+  mutate(su = median(sum, na.rm = T)) %>%
+  group_by(year) %>%
+  mutate(col = median(sum, na.rm = T) > su) %>% 
+  ggplot(aes(year, sum)) +
+  geom_boxplot(aes(fill = col), outlier.colour = NA) +
+  #geom_text(data = med_rain, aes(year, m, label = m), 
+            #position = position_dodge(width = 1), size = 4, vjust = -1) +
+  geom_hline(aes(yintercept = median(sum, na.rm = T)), linewidth = 0.5, lty = 2, color = "black") +
+  labs(x = "Години", y = "Средно годишно количество на валежите (mm)", fill = "Легенда:") +
+  theme(text = element_text(size = 12), legend.position = "right",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Суха", "Дъждовна")) +
+  scale_y_continuous(n.breaks = 10) +
+  guides(fill = guide_legend(reverse = TRUE))
+df %>% 
+  #filter(location == "Varna") %>%
+  group_by(location, year) %>%
+  mutate(sum = sum(prec_sum, na.rm = T)) %>%
   group_by(year) %>% 
-  summarise(p = round(sum(prec_sum, na.rm = T), 0)) %>% 
+  summarise(p = round(median(sum, na.rm = T), 0)) %>%
   mutate(col = p > mean(p)) %>% 
   ggplot(aes(year, p, fill = col)) +
   geom_col() +
@@ -51,8 +103,9 @@ df %>%
   labs(x = "Години", y = "Годишно количество на валежите (mm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
 
+# Snow------------------------------------
 df %>% 
-  filter(month == 5, day %in% c(1:19)) %>%
+  filter(location == "Blagoevgrad") %>%
   group_by(year) %>% 
   summarise(s = round(sum(snow_sum, na.rm = T), 0)) %>% 
   mutate(col = s > mean(s)) %>% 
@@ -66,8 +119,9 @@ df %>%
   labs(x = "Години", y = "Годишно количество на снега (cm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
 
+# Wind speed------------------------------------
 df %>% 
-  filter(month == 5, day %in% c(1:19)) %>% 
+  filter(location == "Varna") %>%
   group_by(year) %>% 
   summarise(w = round(mean(wind_max, na.rm = T), 1)) %>% 
   mutate(col = w < mean(w)) %>% 
@@ -80,8 +134,9 @@ df %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Средна скорост на вятъра (km/h)", fill = NULL)
 
+# Wind direction------------------------------------
 df %>% 
-  filter(year %in% c(1940:2023), month %in% c(5), day %in% c(1:19)) %>% 
+  filter(location == "Varna", year %in% c(1940:2023), month %in% c(5), day %in% c(1:31)) %>% 
   ggradar(wind_dir, wind_max, 
           fill = "blue", color = "blue", alpha = 0.5, show.legend = FALSE,
           facet_groups = grp(year)) +
