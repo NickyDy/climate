@@ -79,24 +79,24 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   mutate(across(c(3, 8), as.double))
 
 rain <- bind_rows(rain, rain_new) %>% 
-  mutate(month = fct_relevel(month, "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"))
+  mutate(month = factor(month, levels = c(1:12)))
 temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
 	drop_na() %>% 
-	filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
+	filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
 	group_by(year) %>% 
 	summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
 	drop_na() %>% 
-  filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
   mutate(m = mean(temp)) %>%
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
 	ggplot(aes(year, temp)) +
-  geom_boxplot(aes(fill = col)) +
-	geom_point(data = mean_temp_month, aes(year, m), color = "blue") +
-	geom_text(data = mean_temp_month, aes(year, m, label = m), size = 4, vjust = -2) +
+  geom_boxplot(aes(fill = col), fatten = NULL) +
+	geom_point(data = mean_temp_month, aes(year, m), color = "black") +
+	geom_text(data = mean_temp_month, aes(year, m, label = m), size = 4, vjust = -0.5) +
 	geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
 	labs(x = "Години", y = "Средна месечна температура (ºС)", fill = "Легенда:", title = "Месец: Юни") +
   theme(text = element_text(size = 14), legend.position = "right") +
@@ -105,33 +105,34 @@ temp %>%
 	scale_x_discrete(labels = paste0(mean_temp_month$year, "\n(n = ", mean_temp_month$n, ")")) +
 	guides(fill = guide_legend(reverse = TRUE))
 
-med_rain_month <- rain %>% 
+mean_rain_month <- rain %>% 
   drop_na() %>% 
-  filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   group_by(month, year) %>% 
-  summarise(m = round(median(sum), 2), n = n())
-rain %>% 
+  summarise(m = round(mean(sum), 2), n = n())
+rain %>%
   drop_na() %>% 
-  filter(month %in% c(6), elev < 1200, day %in% c(1:15)) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
-  mutate(su = median(sum)) %>%
+  mutate(su = mean(sum)) %>%
   group_by(year) %>%
-  mutate(col = median(sum) > su) %>% 
+  mutate(col = mean(sum) > su) %>% 
   ggplot(aes(year, sum)) +
-  geom_boxplot(aes(fill = col)) +
-  geom_text(data = med_rain_month, aes(year, m, label = m), 
-            position = position_dodge(width = 1), size = 4, vjust = -1) +
-  geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
+  geom_boxplot(aes(fill = col), fatten = NULL) +
+  geom_point(data = mean_rain_month, aes(year, m), color = "black") +
+  geom_text(data = mean_rain_month, aes(year, m, label = m), 
+            position = position_dodge(width = 1), size = 4, vjust = -0.5) +
+  geom_hline(aes(yintercept = mean(sum)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средно месечно количество на валежите (mm)", fill = "Легенда:", 
        title = "Месец: Юни") +
   theme(text = element_text(size = 14), legend.position = "right") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
   scale_y_continuous(n.breaks = 10) +
-  scale_x_discrete(labels = paste0(med_rain_month$year, "\n(n = ", med_rain_month$n, ")")) +
+  scale_x_discrete(labels = paste0(mean_rain_month$year, "\n(n = ", mean_rain_month$n, ")")) +
   guides(fill = guide_legend(reverse = TRUE))
 #--------------------------------------------
 mean_temp_year <- temp %>% 
@@ -144,12 +145,12 @@ temp %>%
   filter(elev < 1200) %>%
   mutate(m = mean(temp)) %>%
   group_by(year) %>%
-  mutate(col = mean(temp) > m) %>% 
+  mutate(col = mean(temp) > m) %>%
   ggplot(aes(year, temp)) +
-  geom_boxplot(aes(fill = col)) +
-	geom_point(data = mean_temp_year, aes(year, m), color = "blue") +
+  geom_boxplot(aes(fill = col), fatten = NULL) +
+	geom_point(data = mean_temp_year, aes(year, m), color = "black") +
 	geom_text(data = mean_temp_year, aes(year, m, label = m), 
-						position = position_dodge(width = 1), size = 4, vjust = -2) +
+						position = position_dodge(width = 1), size = 4, vjust = -0.5) +
 	geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средна годишна температура (ºС)", fill = "Легенда:") +
   theme(text = element_text(size = 14), legend.position = "right") +
@@ -158,59 +159,78 @@ temp %>%
 	scale_x_discrete(labels = paste0(mean_temp_year$year, "\n(n = ", mean_temp_year$n, ")")) +
 	guides(fill = guide_legend(reverse = TRUE))
 
-med_rain_year <- rain %>% 
+mean_rain_year <- rain %>% 
 	drop_na() %>% 
-	filter(elev < 1200) %>%
+	filter(station == "Ловеч") %>%
 	group_by(station, year) %>%
 	mutate(sum = sum(rain)) %>%
 	group_by(year) %>% 
-	summarise(m = round(median(sum), 2), n = n())
+	summarise(m = round(mean(sum), 0), n = n())
 rain %>%
 	drop_na() %>% 
-  filter(elev < 1200) %>%
+  filter(station == "Ловеч") %>%
   group_by(station, year) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
-  mutate(su = median(sum)) %>%
+  mutate(su = mean(sum)) %>%
   group_by(year) %>%
-  mutate(col = median(sum) > su) %>% 
+  mutate(col = mean(sum) > su) %>% 
   ggplot(aes(year, sum)) +
-  geom_boxplot(aes(fill = col)) +
-	geom_text(data = med_rain_year, aes(year, m, label = m), 
-						position = position_dodge(width = 1), size = 4, vjust = -1) +
-	geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
+  geom_boxplot(aes(fill = col), fatten = NULL) +
+  geom_point(data = mean_rain_year, aes(year, m), color = "black") +
+	geom_text(data = mean_rain_year, aes(year, m, label = m), 
+						position = position_dodge(width = 1), size = 4, vjust = -0.5) +
+	geom_hline(aes(yintercept = mean(sum)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средно годишно количество на валежите (mm)", fill = "Легенда:") +
   theme(text = element_text(size = 14), legend.position = "right") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Суха", "Дъждовна")) +
 	scale_y_continuous(n.breaks = 10) +
-	scale_x_discrete(labels = paste0(med_rain_year$year, "\n(n = ", med_rain_year$n, ")")) +
+	scale_x_discrete(labels = paste0(mean_rain_year$year, "\n(n = ", mean_rain_year$n, ")")) +
 	guides(fill = guide_legend(reverse = TRUE))
 #------------------------------------------
+mean_temp_decade <- temp %>% 
+  drop_na() %>% 
+  filter(elev < 1200) %>%
+  group_by(decade) %>% 
+  summarise(m = round(mean(temp), 2), n = n())
 temp %>%
 	drop_na() %>% 
   filter(elev < 1200) %>%
-  mutate(m = median(temp)) %>%
+  mutate(m = mean(temp)) %>%
   group_by(decade) %>%
-  mutate(col = median(temp) > m) %>%
-  ggplot(aes(decade, temp, fill = col)) +
-  geom_boxplot() +
-  geom_hline(aes(yintercept = median(temp)), linewidth = 0.5, lty = 2, color = "black") +
+  mutate(col = mean(temp) > m) %>%
+  ggplot(aes(decade, temp)) +
+  geom_boxplot(aes(fill = col), fatten = NULL) +
+  geom_point(data = mean_temp_decade, aes(decade, m), color = "black") +
+  geom_text(data = mean_temp_decade, aes(decade, m, label = m), 
+            position = position_dodge(width = 1), size = 4, vjust = -0.5) +
+  geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Десетилетие", y = "Средна годишна температура (ºС)") +
   theme(text = element_text(size = 14), legend.position = "none") +
   scale_fill_manual(values = c("#00BFC4", "#F8766D"))
+
+mean_rain_decade <- rain %>% 
+  drop_na() %>% 
+  group_by(station, year, decade) %>%
+  mutate(sum = sum(rain)) %>%
+  group_by(decade) %>% 
+  summarise(m = round(mean(sum), 0), n = n())
 rain %>%
 	drop_na() %>% 
   filter(elev < 1200) %>%
-  group_by(station, year, month, decade) %>%
+  group_by(station, year, decade) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
-  mutate(su = median(sum)) %>%
+  mutate(su = mean(sum)) %>%
   group_by(decade) %>%
-  mutate(col = median(sum) > su) %>% summarise(n = n())
-  ggplot(aes(decade, sum, fill = col)) +
-  geom_boxplot() +
-  geom_hline(aes(yintercept = median(sum)), linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Десетилетие", y = "Месечно количество на валежите (mm)") +
+  mutate(col = mean(sum) > su) %>%
+  ggplot(aes(decade, sum)) +
+  geom_boxplot(aes(fill = col), fatten = NULL) +
+  geom_point(data = mean_rain_decade, aes(decade, m), color = "black") +
+  geom_text(data = mean_rain_decade, aes(decade, m, label = m), 
+            position = position_dodge(width = 1), size = 4, vjust = -0.5) +
+  geom_hline(aes(yintercept = mean(sum)), linewidth = 0.5, lty = 2, color = "black") +
+  labs(x = "Десетилетие", y = "Средно годишно количество на валежите (mm)") +
   theme(text = element_text(size = 14), legend.position = "none") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"))
 #----------------------------------------------------
