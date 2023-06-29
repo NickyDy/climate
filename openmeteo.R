@@ -3,16 +3,17 @@ library(openmeteo)
 library(lubridate)
 library(rOstluft.plot)
 
-df <- read_rds("climate/meteo.rds")
+daily <- read_rds("climate/daily.rds")
+hourly <- read_rds("climate/hourly.rds")
 
 glimpse(df)
 df %>% map_dfr(~ sum(is.na(.)))
-df %>% count(location)
+df %>% count(location) %>% print(n = Inf)
 
 ber <- weather_history(
   location = "Berkovitsa",
   start = "1940-01-01",
-  end = "2022-12-31",
+  end = "2023-06-25",
   daily = c("temperature_2m_min", "temperature_2m_mean",
             "temperature_2m_max", "precipitation_sum",
             "snowfall_sum", "windspeed_10m_max",
@@ -25,13 +26,41 @@ ber <- weather_history(
          month = factor(month(date)),
          day = factor(day(date)), 
          location = "Berkovitsa", .after = date)
+df %>% 
+  drop_na() %>% 
+  mutate(extreme = if_else(prec_sum > 100, prec_sum, NA)) %>%
+  filter(prec_sum > 30) %>% 
+  ggplot(aes(date, prec_sum)) +
+  geom_point(aes(date, extreme), color = "red", size = 3, show.legend = F) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  scale_y_log10() +
+  labs(x = "Години", y = "Количество на валежа > 30 mm (литра на квадратен метър) на денонощие") +
+  theme(text = element_text(size = 14)) +
+  facet_wrap(~ location)
+
+df <- weather_history(
+  location = "Sofia",
+  start = "1970-01-01",
+  end = "2023-06-28",
+  hourly = c("temperature_2m", "precipitation"))
+df %>% 
+  drop_na() %>% 
+  filter(hourly_precipitation > 5) %>% 
+  ggplot(aes(datetime, hourly_precipitation)) +
+  geom_point(aes(alpha = 0.05), show.legend = F) +
+  #scale_x_datetime(date_breaks = "5 years") +
+  theme(text = element_text(size = 16)) +
+  labs(x = "Години", y = "Количество на валежа > 5 mm (литра на квадратен метър) на час") +
+  geom_smooth()
+
 # Temperatures------------------------------
 mean_temp <- df %>%
-  filter(location == "Musala peak") %>%
+  #filter(location == "Musala peak") %>%
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1),	n = n())
 df %>%
-  filter(location == "Musala peak") %>%
+  #filter(location == "Musala peak") %>%
   mutate(m = mean(temp_mean, na.rm = T)) %>%
   group_by(year) %>%
   mutate(col = mean(temp_mean, na.rm = T) > m) %>%
@@ -47,7 +76,7 @@ df %>%
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(location == "Cherni peak") %>% 
+  filter(location == "Montana", month == 6) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>%
   mutate(col = m < mean(m)) %>% 
@@ -62,13 +91,13 @@ df %>%
 
 # Rain--------------------
 mean_rain <- df %>% 
-  #filter(location == "Yambol") %>%
+  #filter(month == 6) %>%
   group_by(location, year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
   group_by(month, year) %>% 
-  summarise(m = round(mean(sum, na.rm = T), 2), n = n())
+  summarise(m = round(mean(sum, na.rm = T), 0), n = n())
 df %>% 
-  #filter(location == "Yambol") %>%
+  #filter(month == 6) %>%
   group_by(location, year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
   ungroup() %>%
@@ -78,7 +107,7 @@ df %>%
   ggplot(aes(year, sum)) +
   geom_boxplot(aes(fill = col), outlier.colour = NA, fatten = NULL) +
   geom_point(data = mean_rain, aes(year, m), color = "black", size = 0.5) +
-  #geom_text(data = med_rain, aes(year, m, label = m), position = position_dodge(width = 1), size = 4, vjust = -1) +
+  geom_text(data = mean_rain, aes(year, m, label = m), size = 3, hjust = -0.5, angle = 90) +
   geom_hline(aes(yintercept = mean(sum, na.rm = T)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средно годишно количество на валежите (mm)", fill = "Легенда:") +
   theme(text = element_text(size = 12), legend.position = "right",
@@ -86,8 +115,8 @@ df %>%
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Суха", "Дъждовна")) +
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
-df %>% 
-  filter(location == "Lovech") %>%
+ber %>% 
+  filter(month == 6) %>%
   group_by(location, year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
   group_by(year) %>% 
@@ -103,7 +132,7 @@ df %>%
   labs(x = "Години", y = "Годишно количество на валежите (mm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(year == 2022, location == "Kurdzhali", prec_sum > 0) %>% 
+  filter(year == 2022, location == "Vidin", prec_sum > 0) %>% 
   ggplot(aes(date, prec_sum)) +
   geom_point() +
   geom_smooth(span = 0.2) +

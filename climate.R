@@ -84,12 +84,12 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
 	drop_na() %>% 
-	filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
+	filter(month %in% c(6), elev < 1200, day %in% c(1:23)) %>%
 	group_by(year) %>% 
 	summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
 	drop_na() %>% 
-  filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:23)) %>%
   mutate(m = mean(temp)) %>%
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -107,14 +107,14 @@ temp %>%
 
 mean_rain_month <- rain %>% 
   drop_na() %>% 
-  filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:23)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   group_by(month, year) %>% 
   summarise(m = round(mean(sum), 2), n = n())
 rain %>%
   drop_na() %>% 
-  filter(month %in% c(6), elev < 1200, day %in% c(1:18)) %>%
+  filter(month %in% c(6), elev < 1200, day %in% c(1:23)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
@@ -127,8 +127,7 @@ rain %>%
   geom_text(data = mean_rain_month, aes(year, m, label = m), 
             position = position_dodge(width = 1), size = 4, vjust = -0.5) +
   geom_hline(aes(yintercept = mean(sum)), linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Години", y = "Средно месечно количество на валежите (mm)", fill = "Легенда:", 
-       title = "Месец: Юни") +
+  labs(x = "Години", y = "Средно месечно количество на валежите (mm)", fill = "Легенда:", title = "Месец: Юни") +
   theme(text = element_text(size = 14), legend.position = "right") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
   scale_y_continuous(n.breaks = 10) +
@@ -161,14 +160,12 @@ temp %>%
 
 mean_rain_year <- rain %>% 
 	drop_na() %>% 
-	filter(station == "Ловеч") %>%
 	group_by(station, year) %>%
 	mutate(sum = sum(rain)) %>%
 	group_by(year) %>% 
 	summarise(m = round(mean(sum), 0), n = n())
 rain %>%
 	drop_na() %>% 
-  filter(station == "Ловеч") %>%
   group_by(station, year) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
