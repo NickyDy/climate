@@ -4,9 +4,9 @@ library(rvest)
 rain <- read_rds("~/Desktop/R/climate/rain.rds")
 temp <- read_rds("~/Desktop/R/climate/temp.rds")
 
-rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
+rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php?year=2023&month=6&ord=num&rep_1113=on&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
 	html_element("table") %>% html_table() %>%
-	select(2:17, 19:34) %>% slice(12:21, 25:34, 38:42) %>%
+	select(2:17, 19:34) %>% slice(12:21, 25:34, 38:41) %>%
 	rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -40,7 +40,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   	mutate(across(c(2, 4:7), as.factor)) %>%
   	mutate(across(c(3, 8), as.double))
 
-temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
+temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php?rep_1113=1&year=2023&month=6&dst=&dend=&ord=num&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
 	html_element("table") %>% html_table() %>%
 	select(2:17, 19:34) %>% slice(12:21, 25:31) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
