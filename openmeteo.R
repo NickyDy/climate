@@ -4,16 +4,15 @@ library(lubridate)
 library(rOstluft.plot)
 
 daily <- read_rds("climate/daily.rds")
-hourly <- read_rds("climate/hourly.rds")
 
-glimpse(df)
+glimpse(daily)
 df %>% map_dfr(~ sum(is.na(.)))
 df %>% count(location) %>% print(n = Inf)
 
-ber <- weather_history(
-  location = "Berkovitsa",
+df <- weather_history(
+  location = "Yambol",
   start = "1940-01-01",
-  end = "2023-06-25",
+  end = "2023-07-19",
   daily = c("temperature_2m_min", "temperature_2m_mean",
             "temperature_2m_max", "precipitation_sum",
             "snowfall_sum", "windspeed_10m_max",
@@ -24,9 +23,8 @@ ber <- weather_history(
          "wind_dir" = "daily_winddirection_10m_dominant") %>% 
   mutate(year = factor(year(date)),
          month = factor(month(date)),
-         day = factor(day(date)), 
-         location = "Berkovitsa", .after = date)
-df %>% 
+         day = factor(day(date)))
+daily %>% 
   drop_na() %>% 
   mutate(extreme = if_else(prec_sum > 100, prec_sum, NA)) %>%
   filter(prec_sum > 30) %>% 
@@ -40,9 +38,9 @@ df %>%
   facet_wrap(~ location)
 
 df <- weather_history(
-  location = "Sofia",
+  location = "Yambol",
   start = "1970-01-01",
-  end = "2023-06-28",
+  end = "2023-07-16",
   hourly = c("temperature_2m", "precipitation"))
 df %>% 
   drop_na() %>% 
@@ -53,14 +51,27 @@ df %>%
   theme(text = element_text(size = 16)) +
   labs(x = "Години", y = "Количество на валежа > 5 mm (литра на квадратен метър) на час") +
   geom_smooth()
-
+df %>% 
+  filter(month == 8, year %in% c(1940:2023)) %>% 
+  mutate(extreme = case_when(temp_max >= 35 ~ ">35 \u00B0C", 
+                             temp_max >= 25 & temp_max < 35 ~ "25-35 \u00B0C",
+                             TRUE ~ "<25 \u00B0C"),
+         extreme = fct_relevel(extreme, "<25 \u00B0C", "25-35 \u00B0C", ">35 \u00B0C")) %>% 
+  ggplot(aes(day, temp_max, fill = extreme)) +
+  geom_col(show.legend = T) +
+  scale_fill_manual(values = c("green", "orange", "red")) +
+  scale_x_discrete(breaks = c(1, 15, 31)) +
+  labs(x = "Дни от месеца", y = "Максимална дневна температура (\u00B0C)", fill = "Легенда:") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme(text = element_text(size = 14)) +
+  facet_wrap(~ year)
 # Temperatures------------------------------
 mean_temp <- df %>%
-  #filter(location == "Musala peak") %>%
+  filter(month %in% c(2)) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1),	n = n())
 df %>%
-  #filter(location == "Musala peak") %>%
+  filter(month %in% c(6, 7, 8)) %>% 
   mutate(m = mean(temp_mean, na.rm = T)) %>%
   group_by(year) %>%
   mutate(col = mean(temp_mean, na.rm = T) > m) %>%
@@ -69,17 +80,17 @@ df %>%
   geom_point(data = mean_temp, aes(year, m), color = "black", size = 0.5) +
   geom_text(data = mean_temp, aes(year, m, label = m), size = 2.5, vjust = -0.5) +
   geom_hline(aes(yintercept = mean(temp_mean, na.rm = T)), linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Години", y = "Средна месечна температура (ºС)", fill = "Легенда:") +
+  labs(x = "Години", y = "Средна температура (ºС)", fill = "Легенда:") +
   theme(text = element_text(size = 12), legend.position = "right",
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студена", "Топла")) +
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(location == "Montana", month == 6) %>% 
+  filter(month %in% c(7)) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>%
-  mutate(col = m < mean(m)) %>% 
+  mutate(col = m < mean(m)) %>%
   ggplot(aes(year, m, fill = col)) +
   geom_col() +
   geom_hline(aes(yintercept = mean(m)), linewidth = 0.5, lty = 2, color = "black") +
@@ -87,7 +98,7 @@ df %>%
   scale_y_continuous(expand = expansion(mult = c(.01, .05))) +
   scale_fill_discrete(labels = c("Топла", "Студена")) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  labs(x = "Години", y = "Средна годишна температура (ºС)", fill = NULL)
+  labs(x = "Години", y = "Средна температура (ºС)", fill = NULL)
 
 # Rain--------------------
 mean_rain <- df %>% 
@@ -115,9 +126,9 @@ df %>%
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Суха", "Дъждовна")) +
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
-ber %>% 
+df %>% 
   filter(month == 6) %>%
-  group_by(location, year) %>%
+  group_by(year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
   group_by(year) %>% 
   summarise(p = round(mean(sum, na.rm = T), 0)) %>%
@@ -140,7 +151,7 @@ df %>%
   coord_cartesian(xlim = as.Date(c("2022-01-01", "2022-12-31")))
 # Snow------------------------------------
 df %>% 
-  filter(location == "Blagoevgrad") %>%
+  filter(month == 6) %>%
   group_by(year) %>% 
   summarise(s = round(sum(snow_sum, na.rm = T), 0)) %>% 
   mutate(col = s > mean(s)) %>% 
@@ -156,7 +167,7 @@ df %>%
 
 # Wind speed------------------------------------
 df %>% 
-  filter(location == "Varna") %>%
+  filter(month == 6) %>%
   group_by(year) %>% 
   summarise(w = round(mean(wind_max, na.rm = T), 1)) %>% 
   mutate(col = w < mean(w)) %>% 
