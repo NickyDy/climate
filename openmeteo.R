@@ -12,7 +12,7 @@ min_colors <- c("<-20 \u00B0C" = "purple", "-20:-10 \u00B0C" = "blue", ">-10 \u0
 max_colors <- c(">35 \u00B0C" = "red", "25-35 \u00B0C" = "orange", "<25 \u00B0C" = "green")
 
 df <- weather_history(
-  location = "Yambol",
+  location = "Sofia",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -55,7 +55,7 @@ df %>%
   theme(text = element_text(size = 16), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   facet_wrap(vars(year))
 
-daily %>% 
+df %>% 
   drop_na() %>% 
   mutate(extreme = if_else(prec_sum > 100, prec_sum, NA)) %>%
   filter(prec_sum > 30) %>% 
@@ -78,12 +78,37 @@ df %>%
   labs(x = "Години", y = "Количество на валежа > 5 mm (литра на квадратен метър) на час") +
   geom_smooth()
 
+df %>% 
+  filter(month == 10) %>% 
+  mutate(month = fct_recode(month, "Октомври" = "10")) %>% 
+  group_by(year, month) %>% 
+  summarise(m = round(mean(temp_max, na.rm = T), 1)) %>%
+  mutate(col = case_when(m >= 16 ~ "1", 
+                         m <= 16 & m >= 14.4 ~ "2", 
+                         m <= 14.4 & m >= 13.1 ~ "3",
+                         m <= 13.1 & m >= 12.2 ~ "4", 
+                         m <= 12.2 ~ "5")) %>%
+  ggplot(aes(month, m, fill = col)) +
+  geom_col() +
+  scale_fill_manual(values = colors, labels = labels) +
+  geom_text(aes(label = paste0(round(m, 1), " \u00B0C")), size = 3.5, vjust = -0.2) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
+  facet_wrap(vars(year))
+
+df %>% 
+  filter(month == 10, year %in% c(1993, 1997, 2012, 2019, 2023)) %>% 
+  ggplot(aes(day, temp_max)) +
+  geom_col(fill = "#00BFC4") +
+  geom_text(aes(label = paste0(round(temp_max, 1), " \u00B0C")), size = 3.5, vjust = -0.2) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
+  facet_wrap(vars(year), ncol = 1)
+
 # Extreme temperatures
 mean_max <- df %>% 
-  filter(month %in% c(7, 8), year == 2023) %>% 
+  filter(month %in% c(7, 8, 9), year == 2023) %>% 
   summarise(m = mean(temp_max, na.rm = T), .by = c(month))
 df %>% 
-  filter(month %in% c(7, 8), year %in% c(2023)) %>% 
+  filter(month %in% c(7, 8, 9), year %in% c(2023)) %>% 
   mutate(extreme = case_when(temp_max > 35 ~ ">35 \u00B0C", 
                              temp_max >= 25 & temp_max <= 35 ~ "25-35 \u00B0C",
                              TRUE ~ "<25 \u00B0C"),
@@ -203,10 +228,9 @@ df %>%
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(month == 8) %>%
+  filter(month %in% c(9), location == "Ямбол") %>%
   group_by(year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
-  group_by(year) %>% 
   summarise(p = round(mean(sum, na.rm = T), 0)) %>%
   mutate(col = p > mean(p)) %>%
   ggplot(aes(year, p, fill = col)) +
@@ -218,14 +242,17 @@ df %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Количество на валежите (mm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
-df %>% 
-  filter(year == 2022, location == "Vidin", prec_sum > 0) %>% 
-  ggplot(aes(date, prec_sum)) +
-  geom_point() +
-  geom_smooth(span = 0.2) +
-  scale_x_date(date_breaks = "1 month", date_labels = "%b-%Y") +
-  coord_cartesian(xlim = as.Date(c("2022-01-01", "2022-12-31")))
 
+df %>% 
+  filter(location == "София") %>% 
+  group_by(year, month) %>% 
+  summarise(prec_s = sum(prec_sum, na.rm = T)) %>% 
+  group_by(month) %>% 
+  summarise(prec_m = mean(prec_s)) %>% 
+  ggplot(aes(month, prec_m)) +
+  geom_col(fill = "#00BFC4") +
+  geom_text(aes(label = round(prec_m, 1)), size = 5, vjust = -0.5)
+  
 # Snow------------------------------------
 df %>% 
   filter(month == 6) %>%
@@ -241,7 +268,6 @@ df %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Годишно количество на снега (cm)", fill = NULL) +
   guides(fill = guide_legend(reverse = TRUE))
-
 # Wind speed------------------------------------
 df %>% 
   filter(month == 8) %>%
@@ -256,7 +282,6 @@ df %>%
   scale_fill_discrete(labels = c("Ветровита", "Безветрена")) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   labs(x = "Години", y = "Средна скорост на вятъра (km/h)", fill = NULL)
-
 # Wind direction------------------------------------
 df %>% 
   mutate(month = as.numeric(month), month = month.abb[month],
