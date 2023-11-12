@@ -4,7 +4,7 @@ library(rvest)
 rain <- read_rds("climate/rain.rds")
 temp <- read_rds("climate/temp.rds")
 
-rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
+rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php?year=2023&month=11&ord=num&rep_1113=on&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
   html_element("table") %>% html_table() %>%
   select(2:17, 19:34) %>% slice(12:21, 25:32) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
@@ -19,7 +19,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
                      "Обзор", "Дупница", "Орландовци", "Бояна", "Княжево", "Панагюрище",
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial"), 
     .after = station,
-    year = 2023, month = 10,
+    year = 2023, month = 11,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -40,7 +40,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(across(c(3, 8), as.double))
 
-temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php?rep_1113=1&year=2023&month=10&dst=&dend=&ord=num&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
+temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php?rep_1113=1&year=2023&month=11&dst=&dend=&ord=num&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
   html_element("table") %>% html_table() %>%
   select(2:17, 19:34) %>% slice(12:21, 25:31) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
@@ -57,7 +57,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php?rep_1113
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци") ~ "unofficial"), 
     .after = station,
-    year = 2023, month = 10,
+    year = 2023, month = 11,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -84,12 +84,12 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
   drop_na() %>% 
-  filter(month %in% c(10), elev < 1200) %>%
+  filter(month %in% c(11), elev < 1200) %>%
   group_by(year) %>% 
   summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
   drop_na() %>% 
-  filter(month %in% c(10), elev < 1200) %>%
+  filter(month %in% c(11), elev < 1200) %>%
   mutate(m = mean(temp)) %>% 
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -99,7 +99,7 @@ temp %>%
   geom_text(data = mean_temp_month, aes(year, m, label = m), size = 4, vjust = -0.5) +
   geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средна месечна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Октомври") +
+       fill = "Легенда:", title = "Месец: Ноември") +
   theme(text = element_text(size = 14), legend.position = "right") +
   scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студен", "Топъл")) +
   scale_y_continuous(n.breaks = 10) +
@@ -108,14 +108,14 @@ temp %>%
 
 mean_rain_month <- rain %>% 
   drop_na() %>% 
-  filter(month %in% c(10), elev < 1200) %>%
+  filter(month %in% c(11), elev < 1200) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   group_by(month, year) %>% 
   summarise(m = round(mean(sum), 2), n = n())
 rain %>%
   drop_na() %>% 
-  filter(month %in% c(10), elev < 1200) %>%
+  filter(month %in% c(11), elev < 1200) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
@@ -129,7 +129,7 @@ rain %>%
             position = position_dodge(width = 1), size = 4, vjust = -0.5) +
   geom_hline(aes(yintercept = mean(sum)), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средно месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Октомври") +
+       fill = "Легенда:", title = "Месец: Ноември") +
   theme(text = element_text(size = 14), legend.position = "right") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
   scale_y_continuous(n.breaks = 10) +
