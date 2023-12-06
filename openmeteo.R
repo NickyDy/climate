@@ -188,7 +188,7 @@ df %>%
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(month %in% c(10)) %>% 
+  filter(month %in% c(12)) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>%
   mutate(col = m < mean(m)) %>%
@@ -228,7 +228,7 @@ df %>%
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
 df %>% 
-  filter(month %in% c(9), location == "Ямбол") %>%
+  filter(month %in% c(11)) %>%
   group_by(year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
   summarise(p = round(mean(sum, na.rm = T), 0)) %>%
