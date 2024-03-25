@@ -97,8 +97,10 @@ temp %>%
   ggplot(aes(year, temp)) +
   geom_boxplot(aes(fill = col), fatten = NULL) +
   geom_point(data = mean_temp_month, aes(year, m), color = "white") +
-  geom_text(data = mean_temp_month, aes(year, m, label = m), size = 4, vjust = -0.5) +
-  geom_hline(aes(yintercept = mean(temp)), linewidth = 0.5, lty = 2, color = "black") +
+  geom_text(data = mean_temp_month, aes(year, m, label = m), 
+            size = 14, vjust = -0.5, size.unit = "pt") +
+  geom_hline(aes(yintercept = mean(temp)), 
+             linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Средна месечна температура (\u00B0C)", 
        fill = "Легенда:", title = "Месец: Март") +
   theme(text = element_text(size = 14), legend.position = "right") +
@@ -127,8 +129,10 @@ rain %>%
   geom_boxplot(aes(fill = col), fatten = NULL) +
   geom_point(data = mean_rain_month, aes(year, m), color = "white") +
   geom_text(data = mean_rain_month, aes(year, m, label = m), 
-            position = position_dodge(width = 1), size = 4, vjust = -0.5) +
-  geom_hline(aes(yintercept = mean(sum)), linewidth = 0.5, lty = 2, color = "black") +
+            position = position_dodge(width = 1), 
+            size = 14, vjust = -0.5, size.unit = "pt") +
+  geom_hline(aes(yintercept = mean(sum)), 
+             linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Години", y = "Месечно количество на валежите (mm)", 
        fill = "Легенда:", title = "Месец: Март") +
   theme(text = element_text(size = 14), legend.position = "right") +
