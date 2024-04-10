@@ -1,8 +1,9 @@
 library(tidyverse)
 library(openmeteo)
+library(arrow)
 #library(rOstluft.plot)
 
-daily <- read_rds("shiny/climate/daily.rds") %>% 
+daily <- read_parquet("shiny/climate/daily.parquet") %>% 
   #filter(!location %in% c("Връх Мусала", "Връх Ботев", "Вреъх Черни връх")) %>% 
   mutate(decade = case_when(
     year %in% c("1940", "1941", "1942", "1943", "1944", "1945", "1946", "1947", "1948", "1949") ~ "40s",
@@ -26,7 +27,7 @@ max_colors <- c(">35 \u00B0C" = "red", "25-35 \u00B0C" = "orange", "<25 \u00B0C"
 
 df <- weather_history(
   location = "yambol",
-  start = "2024-01-01",
+  start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
             "temperature_2m_max", "precipitation_sum",
@@ -44,7 +45,7 @@ df %>%
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
   pivot_longer(2:7) %>% 
-  filter(month == "3") %>% 
+  filter(month == "4") %>% 
   mutate(col = value > 0) %>%
   mutate(name = fct_recode(name, 
            "Минимална температура (\u00B0C)" = "temp_min", 
@@ -79,9 +80,9 @@ df %>%
 colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "lightblue", "5" = "blue")
 labels <- c("1" = "Много горещо", "2" = "Горещо" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
 
-df %>% 
-  filter(month %in% c(7, 8, 9)) %>% 
-  mutate(month = fct_recode(month, "Юли" = "7", "Август" = "8", "Септември" = "9")) %>% 
+daily %>% 
+  filter(month %in% c(4)) %>% 
+  mutate(month = fct_recode(month, "Април" = "4")) %>% 
   group_by(year, month) %>%
   summarise(m = round(mean(temp_max, na.rm = T), 1), n = n()) %>%
   mutate(col = case_when(m > 31 ~ "1", 
@@ -94,6 +95,25 @@ df %>%
   geom_text(aes(label = paste0(round(m, 1), " \u00B0C")), size = 3.5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
+  labs(x = NULL, y = "Средна максимална дневна температура (\u00B0C)", fill = "Легенда:") +
+  theme(text = element_text(size = 16), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  facet_wrap(vars(year))
+
+df %>% 
+  filter(month %in% c(4)) %>% 
+  #mutate(month = fct_recode(month, "Април" = "4")) %>% 
+  group_by(year, month) %>%
+  summarise(m = round(mean(temp_max, na.rm = T), 1), n = n()) %>%
+  ungroup() %>% 
+  mutate(mm = mean(m), col = case_when(
+    m > mm ~ "1", 
+    m <= mm ~ "2")) %>%
+  ggplot(aes(month, m, fill = col)) +
+  geom_col(show.legend = T) +
+  geom_text(aes(label = paste0(round(m, 1), " \u00B0C")), size = 3.5, vjust = -0.2) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
+  scale_fill_manual(values = c("1" = "orange" , "2" = "green"), 
+                    labels = c("1" = "По-топло от средното", "2" = "По-хладно от средното" )) +
   labs(x = NULL, y = "Средна максимална дневна температура (\u00B0C)", fill = "Легенда:") +
   theme(text = element_text(size = 16), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   facet_wrap(vars(year))
