@@ -85,12 +85,12 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
   drop_na(temp) %>% 
-  filter(month %in% c(5), elev < 1200) %>%
+  filter(month %in% c(5), elev < 1200, day %in% c(1:15)) %>%
   group_by(year) %>% 
   summarise(m = round(mean(temp), 2),	n = n())
 temp %>%
   drop_na(temp) %>% 
-  filter(month %in% c(5), elev < 1200) %>%
+  filter(month %in% c(5), elev < 1200, day %in% c(1:15)) %>%
   mutate(m = mean(temp)) %>% 
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -101,24 +101,25 @@ temp %>%
             size = 14, vjust = -0.5, size.unit = "pt") +
   geom_hline(aes(yintercept = mean(temp)), 
              linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Години", y = "Средна месечна температура (\u00B0C)", 
+  labs(x = NULL, y = "Средна месечна температура (\u00B0C)", 
        fill = "Легенда:", title = "Месец: Май") +
-  theme(text = element_text(size = 14), legend.position = "right") +
-  scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студен", "Топъл")) +
+  theme(text = element_text(size = 16), legend.position = "top") +
+  scale_fill_manual(values = c("#00BFC4", "#F8766D"), 
+                    labels = c("По-хладно от средното", "По-топло от средното")) +
   scale_y_continuous(n.breaks = 10) +
   scale_x_discrete(labels = paste0(mean_temp_month$year, "\n(n = ", mean_temp_month$n, ")")) +
   guides(fill = guide_legend(reverse = TRUE))
 
 mean_rain_month <- rain %>% 
   drop_na(rain) %>% 
-  filter(month %in% c(5), elev < 1200) %>%
+  filter(month %in% c(5), elev < 1200, day %in% c(1:15)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   group_by(month, year) %>% 
   summarise(m = round(mean(sum), 2), n = n())
 rain %>%
   drop_na(rain) %>% 
-  filter(month %in% c(5), elev < 1200) %>%
+  filter(month %in% c(5), elev < 1200, day %in% c(1:15)) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
@@ -133,10 +134,11 @@ rain %>%
             size = 14, vjust = -0.5, size.unit = "pt") +
   geom_hline(aes(yintercept = mean(sum)), 
              linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Години", y = "Месечно количество на валежите (mm)", 
+  labs(x = NULL, y = "Месечно количество на валежите (mm)", 
        fill = "Легенда:", title = "Месец: Май") +
-  theme(text = element_text(size = 14), legend.position = "right") +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Сух", "Дъждовен")) +
+  theme(text = element_text(size = 16), legend.position = "top") +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4"), 
+                    labels = c("По-сухо от средното", "По-дъждовно от средното")) +
   scale_y_continuous(n.breaks = 10) +
   scale_x_discrete(labels = paste0(mean_rain_month$year, "\n(n = ", mean_rain_month$n, ")")) +
   guides(fill = guide_legend(reverse = TRUE))
