@@ -1,6 +1,7 @@
 library(tidyverse)
-library(openmeteo)
 library(arrow)
+library(openmeteo)
+
 #library(rOstluft.plot)
 
 daily <- read_parquet("shiny/climate/daily.parquet") %>% 
@@ -20,24 +21,7 @@ daily <- read_parquet("shiny/climate/daily.parquet") %>%
 
 df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
-#------------------------------
-
-db <- daily %>% 
-  group_by(location, year, month) %>% 
-  summarise(s = sum(prec_sum, na.rm = T)) %>% 
-  ungroup() %>% 
-  group_by(year, month) %>% 
-  summarise(m = mean(s, na.rm = T)) %>% 
-  #filter(month == 4) %>% 
-  ungroup() %>%
-  mutate(ss = mean(m), col = case_when(
-    m > ss + 20 ~ "0",
-    m > ss ~ "1", 
-    m <= ss ~ "2"))
-
-min_colors <- c("<-20 \u00B0C" = "purple", "-20:-10 \u00B0C" = "blue", ">-10 \u00B0C" = "lightblue")
-max_colors <- c(">35 \u00B0C" = "red", "25-35 \u00B0C" = "orange", "<25 \u00B0C" = "green")
-
+#---------------------
 df <- weather_history(
   location = "yambol",
   start = "1940-01-01",
@@ -57,7 +41,7 @@ df <- weather_history(
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "5", year == 2024) %>%
+  filter(month == "6", year == 2024) %>%
   pivot_longer(2:7) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -72,14 +56,14 @@ df %>%
            "Минимална температура (\u00B0C)" = "temp_min",
            "Дъжд (mm)" = "prec_sum",
            "Сняг (cm)" = "snow_sum",
-           "Скорост на вятъра (km/h)" = "wind_max"),
+           "Максимална скорост на вятъра (km/h)" = "wind_max"),
          name = fct_relevel(name,
            "Максимална температура (\u00B0C)",
            "Средна температура (\u00B0C)",
            "Минимална температура (\u00B0C)",
            "Дъжд (mm)",
            "Сняг (cm)",
-           "Скорост на вятъра (km/h)")) %>%
+           "Максимална скорост на вятъра (km/h)")) %>%
   ggplot(aes(day, value, fill = col)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = round(value, 1)), size = 4, vjust = -0.2) +
@@ -91,6 +75,116 @@ df %>%
   labs(x = "Дни", y = NULL) + 
   theme(text = element_text(size = 16)) +
   facet_wrap(vars(name), ncol = 1, dir = "v")
+
+df %>% 
+  filter(month %in% c(6)) %>% 
+  summarise(m = round(mean(temp_max, na.rm = T), 1), n = n(), .by = c(year, month)) %>%
+  mutate(mm = mean(m, na.rm = T), col = case_when(
+    m > mm + 2 ~ "1",
+    m > mm ~ "2",
+    m < mm - 2 ~ "4",
+    m <= mm ~ "3")) %>%
+  ggplot(aes(year, m, fill = col)) +
+  geom_col() +
+  geom_text(aes(label = paste0(round(m, 1))), size = 3.5, hjust = -0.1, angle = 90) +
+  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
+  scale_fill_manual(values = c("1" = "red", "2" = "orange" ,
+                               "3" = "green", "4" = "#0096FF"), 
+                    labels = c("1" = "Моного по-топло от средното", 
+                               "2" = "По-топло от средното", 
+                               "3" = "По-хладно от средното",
+                               "4" = "Много по-хладно от средното")) +
+  labs(x = NULL, y = "Средна максимална дневна температура (\u00B0C)", fill = "Легенда:",
+       title = NULL) +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme(text = element_text(size = 16), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
+df %>% 
+  filter(month %in% c(6)) %>% 
+  summarise(s = round(sum(prec_sum, na.rm = T), 1), n = n(), .by = c(year, month)) %>%
+  mutate(ss = mean(s), col = case_when(
+    s > ss + 30 ~ "1",
+    s < ss - 15 ~ "4",
+    s > ss ~ "2",
+    s <= ss ~ "3")) %>%
+  ggplot(aes(year, s, fill = col)) +
+  geom_col() +
+  geom_text(aes(label = paste0(round(s, 0))), size = 3.5, vjust = -0.2) +
+  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
+  scale_fill_manual(values = c("1" = "blue" , "2" = "#00BFC4" ,
+                               "3" = "orange", "4" = "red"), 
+                    labels = c("1" = "Много по-дъждовно от средното", 
+                               "2" = "По-дъждовно от средното", 
+                               "3" = "По-сухо от средното",
+                               "4" = "Много по-сухо от средното")) +
+  labs(x = NULL, y = "Месечно количество на валежите (mm)", fill = "Легенда:",
+       title = NULL) +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme(text = element_text(size = 16), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
+
+temp %>% 
+  filter(month %in% c(6), elev < 1200) %>% 
+  summarise(m = round(mean(temp, na.rm = T), 1), n = n(), .by = c(year, month)) %>%
+  mutate(mm = mean(m, na.rm = T), col = case_when(
+    m > mm + 1.5 ~ "1",
+    m > mm ~ "2",
+    m < mm - 1.5 ~ "4",
+    m <= mm ~ "3")) %>%
+  ggplot(aes(year, m, fill = col)) +
+  geom_col() +
+  geom_text(aes(label = paste0(round(m, 1))), size = 5, vjust = -0.3) +
+  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
+  scale_fill_manual(values = c("1" = "red", "2" = "orange" ,
+                               "3" = "green", "4" = "#0096FF"), 
+                    labels = c("1" = "Моного по-топло от средното", 
+                               "2" = "По-топло от средното", 
+                               "3" = "По-хладно от средното",
+                               "4" = "Много по-хладно от средното")) +
+  labs(x = NULL, y = "Средна дневна температура (\u00B0C)", fill = "Легенда:", title = NULL) +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme(text = element_text(size = 16), legend.position = "top")
+
+rain %>% 
+  filter(month %in% c(6), elev < 1200) %>% 
+  summarise(s = round(sum(rain, na.rm = T), 1), n = n(), .by = c(station, year, month)) %>%
+  summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
+  mutate(ss = mean(s), col = case_when(
+    s > ss + 20 ~ "0",
+    s < ss - 15 ~ "3",
+    s > ss ~ "1",
+    s <= ss ~ "2")) %>%
+  ggplot(aes(year, s, fill = col)) +
+  geom_col() +
+  geom_text(aes(label = paste0(round(s, 0))), size = 5, vjust = -0.3) +
+  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
+  scale_fill_manual(values = c("0" = "blue" , "1" = "#00BFC4" , "2" = "orange", "3" = "red"), 
+                    labels = c("0" = "Много по-дъждовно от средното", 
+                               "1" = "По-дъждовно от средното", 
+                               "2" = "По-сухо от средното",
+                               "3" = "Много по-сухо от средното")) +
+  labs(x = NULL, y = "Месечно количество на валежите (mm)", fill = "Легенда:", title = NULL) +
+  theme(text = element_text(size = 16), legend.position = "top")
+#---------------------------------------------------------------
+db <- daily %>% 
+  group_by(location, year, month) %>% 
+  summarise(s = sum(prec_sum, na.rm = T)) %>% 
+  ungroup() %>% 
+  group_by(year, month) %>% 
+  summarise(m = mean(s, na.rm = T)) %>% 
+  #filter(month == 4) %>% 
+  ungroup() %>%
+  mutate(ss = mean(m), col = case_when(
+    m > ss + 20 ~ "0",
+    m > ss ~ "1", 
+    m <= ss ~ "2"))
+
+min_colors <- c("<-20 \u00B0C" = "purple", "-20:-10 \u00B0C" = "blue", ">-10 \u00B0C" = "lightblue")
+max_colors <- c(">35 \u00B0C" = "red", "25-35 \u00B0C" = "orange", "<25 \u00B0C" = "green")
 
 # df <- weather_history(
 #   location = "Yambol",
@@ -119,77 +213,6 @@ daily %>%
   labs(x = NULL, y = "Средна максимална дневна температура (\u00B0C)", fill = "Легенда:") +
   theme(text = element_text(size = 16), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   facet_wrap(vars(year))
-
-df %>% 
-  filter(month %in% c(5), day %in% c(1:15)) %>% 
-  group_by(year, month) %>%
-  summarise(m = round(mean(temp_mean, na.rm = T), 1), n = n()) %>%
-  ungroup() %>% 
-  mutate(mm = mean(m, na.rm = T), col = case_when(
-    m > mm + 2 ~ "0",
-    m > mm ~ "1", 
-    m <= mm ~ "2")) %>%
-  ggplot(aes(year, m, fill = col)) +
-  geom_col() +
-  geom_text(aes(label = paste0(round(m, 1))), size = 3.5, hjust = -0.1, angle = 90) +
-  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
-  scale_fill_manual(values = c("0" = "red", "1" = "orange" , "2" = "green"), 
-                    labels = c("0" = "Моного по-топло от средното", 
-                               "1" = "По-топло от средното", 
-                               "2" = "По-хладно от средното" )) +
-  labs(x = NULL, y = "Средна максимална дневна температура (\u00B0C)", fill = "Легенда:",
-       title = NULL) +
-  theme(text = element_text(size = 16), 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
-df %>% 
-  filter(month %in% c(5), day %in% c(1:31)) %>% 
-  group_by(year, month) %>%
-  summarise(s = round(sum(prec_sum, na.rm = T), 1), n = n()) %>%
-  ungroup() %>%
-  mutate(ss = mean(s), col = case_when(
-    s > ss + 20 ~ "0",
-    s > ss ~ "1",
-    s <= ss ~ "2")) %>%
-  ggplot(aes(year, s, fill = col)) +
-  geom_col() +
-  geom_text(aes(label = paste0(round(s, 0))), size = 3.5, hjust = -0.1, angle = 90) +
-  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
-  scale_fill_manual(values = c("0" = "blue" , "1" = "cyan" , "2" = "orange"), 
-                    labels = c("0" = "Много по-дъждовно от средното", 
-                               "1" = "По-дъждовно от средното", 
-                               "2" = "По-сухо от средното" )) +
-  labs(x = NULL, y = "Месечно количество на валежите (mm)", fill = "Легенда:",
-       title = NULL) +
-  theme(text = element_text(size = 16), 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
-
-daily %>% 
-  filter(month %in% c(1)) %>% 
-  group_by(location, year, month) %>%
-  summarise(s = round(sum(prec_sum, na.rm = T), 1), n = n()) %>%
-  ungroup() %>%
-  group_by(year, month) %>% 
-  summarise(s = mean(s, na.rm = T)) %>% 
-  ungroup() %>% 
-  mutate(ss = mean(s), col = case_when(
-    s > ss + 20 ~ "0",
-    s > ss ~ "1",
-    s <= ss ~ "2")) %>%
-  ggplot(aes(year, s, fill = col)) +
-  geom_col() +
-  geom_text(aes(label = paste0(round(s, 0))), size = 3.5, hjust = -0.1, angle = 90) +
-  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
-  scale_fill_manual(values = c("0" = "blue" , "1" = "cyan" , "2" = "orange"), 
-                    labels = c("0" = "Много по-дъждовно от средното", 
-                               "1" = "По-дъждовно от средното", 
-                               "2" = "По-сухо от средното" )) +
-  labs(x = NULL, y = "Месечно количество на валежите (mm)", fill = "Легенда:",
-       title = NULL) +
-  theme(text = element_text(size = 16), 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
 
 daily %>% 
   drop_na() %>% 
@@ -320,8 +343,9 @@ df %>%
   scale_fill_manual(values = c("#00BFC4", "#F8766D"), labels = c("Студена", "Топла")) +
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
+
 df %>% 
-  filter(month %in% c(4)) %>% 
+  #filter(month %in% c(4)) %>% 
   group_by(year) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1)) %>%
   mutate(col = m < mean(m)) %>%
@@ -348,6 +372,7 @@ daily %>%
   scale_fill_discrete(labels = c("Топло", "Студено")) +
   theme(text = element_text(size = 16), axis.text.x = element_text(vjust = 0.5, hjust = 1)) +
   labs(x = "Десетилетие", y = "Средна температура (\u00B0C)", fill = "Легенда:")
+
 # Rain--------------------------------------------------------------------------
 mean_rain <- daily %>% 
   #filter(month == 6) %>%
@@ -374,9 +399,9 @@ daily %>%
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Суха", "Дъждовна")) +
   scale_y_continuous(n.breaks = 10) +
   guides(fill = guide_legend(reverse = TRUE))
-daily %>% 
+df %>% 
   #filter(month %in% c(4)) %>%
-  group_by(year, location) %>%
+  group_by(year) %>%
   mutate(sum = sum(prec_sum, na.rm = T)) %>%
   ungroup() %>% 
   summarise(p = round(mean(sum, na.rm = T), 0), .by = year) %>%
