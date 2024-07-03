@@ -27,10 +27,10 @@ nimh %>%
   ggplot(aes(wind_speed, station, fill = wind_speed)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = wind_speed), position = position_dodge(width = 1),
-            hjust = -0.1, size = 5) +
+            hjust = -0.1, size = 6) +
   scale_y_reordered() +
   scale_x_continuous(expand = expansion(mult = c(.01, .1))) +
-  theme(text = element_text(size = 16), 
+  theme(text = element_text(size = 20), 
         axis.text.x = element_blank(), 
         axis.ticks.x = element_blank()) +
   scale_fill_gradient(low = "white", high = "blue") +
