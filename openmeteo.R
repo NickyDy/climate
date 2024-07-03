@@ -154,7 +154,7 @@ rain %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), col = case_when(
     s > ss + 20 ~ "0",
-    s < ss - 15 ~ "3",
+    s < ss - 20 ~ "3",
     s > ss ~ "1",
     s <= ss ~ "2")) %>%
   ggplot(aes(year, s, fill = col)) +
