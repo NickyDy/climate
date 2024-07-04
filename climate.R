@@ -5,9 +5,9 @@ library(arrow)
 rain <- read_parquet("climate/rain.parquet")
 temp <- read_parquet("climate/temp.parquet")
 #-------------------------------------------
-rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php?year=2024&month=6&ord=num&rep_1113=on&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
+rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   html_element("table") %>% html_table() %>%
-  select(2:17, 19:34) %>% slice(12:21, 25:34, 38:42) %>%
+  select(2:17, 19:34) %>% slice(12:21, 25:37) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -21,7 +21,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php?year=202
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 6,
+    year = 2024, month = 7,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -59,7 +59,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 6,
+    year = 2024, month = 7,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -86,11 +86,11 @@ temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 mean_temp_month <- temp %>%
   drop_na(temp) %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(7), elev < 1200) %>%
   summarise(m = round(mean(temp), 1),	n = n(), .by = year)
 temp %>%
   drop_na(temp) %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(7), elev < 1200) %>%
   mutate(m = mean(temp)) %>% 
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -102,7 +102,7 @@ temp %>%
   geom_hline(aes(yintercept = mean(temp)), 
              linewidth = 0.5, lty = 2, color = "black") +
   labs(x = NULL, y = "Средна месечна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Юни") +
+       fill = "Легенда:", title = "Месец: Юли") +
   theme(text = element_text(size = 16), legend.position = "top") +
   scale_fill_manual(values = c("#00BFC4", "#F8766D"), 
                     labels = c("По-хладно от средното", "По-топло от средното")) +
@@ -112,14 +112,14 @@ temp %>%
 
 mean_rain_month <- rain %>% 
   drop_na(rain) %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(7), elev < 1200) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>% 
   summarise(m = round(mean(sum), 0), n = n(), .by = c(year, month))
 rain %>%
   drop_na(rain) %>% 
-  filter(month %in% c(6), elev < 1200) %>%
+  filter(month %in% c(7), elev < 1200) %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
@@ -135,7 +135,7 @@ rain %>%
   geom_hline(aes(yintercept = mean(sum)), 
              linewidth = 0.5, lty = 2, color = "black") +
   labs(x = NULL, y = "Месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Юни") +
+       fill = "Легенда:", title = "Месец: Юли") +
   theme(text = element_text(size = 16), legend.position = "top") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), 
                     labels = c("По-сухо от средното", "По-дъждовно от средното")) +
