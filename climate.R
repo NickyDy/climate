@@ -113,7 +113,7 @@ rain %>%
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
-    s > ss + iqr / 1.5~ "0",
+    s > ss + iqr / 1.5 ~ "0",
     s < ss - iqr / 1.5 ~ "3",
     s > ss ~ "1",
     s <= ss ~ "2")) %>%
@@ -133,11 +133,11 @@ rain %>%
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
-labels <- c("1" = "Много горещо", "2" = "Горещо" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
+labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
+            "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
 
 temp %>%
-  filter(month %in% c(6:8), elev < 1200) %>% 
-  #mutate(month = fct_recode(month, "Юни" = "6", "Юли" = "7", "Август" = "8")) %>% 
+  filter(month %in% c(1:7), elev < 1200) %>% 
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -158,9 +158,8 @@ temp %>%
   facet_wrap(vars(year))
 
 rain %>%
-  filter(month %in% c(1:12), elev < 1200) %>% 
+  filter(month %in% c(1:7), elev < 1200) %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
-  #mutate(month = fct_recode(month, "Юни" = "6", "Юли" = "7", "Август" = "8")) %>% 
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(ss = round(mean(sm, na.rm = T), 1), 
