@@ -46,8 +46,8 @@ daily %>% filter(!decade == "2020-2024") %>%
 df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
-yam <- weather_history(
-  location = "yambol",
+df <- weather_history(
+  location = "sofia",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -66,7 +66,7 @@ yam <- weather_history(
          month = factor(month(date)),
          day = factor(day(date)))
 
-yam %>% 
+df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
   filter(month == "7", year == 2024) %>%
@@ -106,8 +106,8 @@ colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = 
 labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
             "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
 
-sof %>% 
-  filter(month %in% c(1:7)) %>% 
+df %>% 
+  filter(month %in% c(6:8)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -127,7 +127,8 @@ sof %>%
   theme(text = element_text(size = 14), legend.position = "top") +
   facet_wrap(vars(year))
 
-filter(month %in% c(1:7)) %>%
+df %>% 
+  filter(month %in% c(6:8)) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(ss = round(mean(s, na.rm = T), 1), 
@@ -153,7 +154,7 @@ filter(month %in% c(1:7)) %>%
   theme(text = element_text(size = 14), legend.position = "top") +
   facet_wrap(vars(year))
 #-----------------------
-sof %>% 
+df %>% 
   filter(month %in% c(7)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
@@ -177,7 +178,7 @@ sof %>%
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), 
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
-sof %>% 
+df %>% 
   filter(month %in% c(7)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
