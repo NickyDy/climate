@@ -47,8 +47,3 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
-
-*.rds
-*.csv
-*.gpkg
-*.parquet
