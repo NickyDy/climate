@@ -85,7 +85,7 @@ rain <- bind_rows(rain, rain_new) %>%
 temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 temp %>% 
-  filter(month %in% c(8), elev < 1200, status == "official") %>% 
+  filter(month %in% c(8), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr ~ "1",
