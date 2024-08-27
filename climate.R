@@ -119,10 +119,10 @@ rain %>%
     s <= ss ~ "2")) %>%
   ggplot(aes(year, s, fill = col)) +
   geom_col() +
-  geom_text(aes(label = paste0(round(s, 1))), size = 5, vjust = -0.3) +
+  geom_text(aes(label = paste0(round(s, 0))), size = 5, vjust = -0.3) +
   geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
-  scale_fill_manual(values = c("0" = "blue" , "1" = "#00BFC4" , 
+  scale_fill_manual(values = c("0" = "blue" , "1" = "#0096FF" , 
                                "2" = "orange", "3" = "red"), 
                     labels = c("0" = "Много по-дъждовно от средното", 
                                "1" = "По-дъждовно от средното", 
@@ -150,7 +150,7 @@ temp %>%
   ungroup() %>%
   ggplot(aes(month, m, fill = col)) +
   geom_col(show.legend = T) +
-  geom_text(aes(label = round(m, 1)), size = 3.3, vjust = -0.2) +
+  geom_text(aes(label = round(m, 1)), size = 4, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:") +
@@ -166,13 +166,13 @@ rain %>%
          iqr = IQR(sm), col = case_when(
            sm < ss - iqr * 1.2 ~ "5",
            sm > ss + iqr * 1.2 ~ "1",
-           sm < ss - iqr ~ "4",
-           sm > ss + iqr ~ "2",
+           sm < ss - iqr / 1.2 ~ "4",
+           sm > ss + iqr / 1.2 ~ "2",
            sm <= ss + iqr ~ "3")) %>% 
   ungroup() %>%
   ggplot(aes(month, sm, fill = col)) +
   geom_col(show.legend = T) +
-  geom_text(aes(label = round(sm, 1)), size = 3.5, hjust = -0.1, angle = 90) +
+  geom_text(aes(label = round(sm, 0)), size = 4, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = c("1" = "blue" , "2" = "#0096FF" , "3" = "green",
                                "4" = "orange", "5" = "red"), 
