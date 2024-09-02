@@ -7,7 +7,7 @@ temp <- read_parquet("climate/temp.parquet")
 #-------------------------------------------
 rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php?year=2024&month=8&ord=num&rep_1113=on&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
   html_element("table") %>% html_table() %>%
-  select(2:17, 19:34) %>% slice(12:21, 25:34, 38:41) %>%
+  select(2:17, 19:34) %>% slice(12:21, 25:32) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -42,7 +42,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php?year=202
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(across(c(3, 8), as.double))
 
-temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
+temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php?rep_1113=1&year=2024&month=8&dst=&dend=&ord=num&submit=%D0%9F%D0%9E%D0%9A%D0%90%D0%96%D0%98#sel") %>%
   html_element("table") %>% html_table() %>%
   select(2:17, 19:34) %>% slice(12:21, 25:31) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
@@ -158,7 +158,7 @@ temp %>%
   facet_wrap(vars(year))
 
 rain %>%
-  filter(month %in% c(6:8), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1:8), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
