@@ -105,9 +105,13 @@ df %>%
 colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
             "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
+t_year <- df %>% 
+  filter(month %in% c(1:9)) %>% 
+  summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
+  summarise(mean_year = mean(m), .by = year)
 
 df %>% 
-  filter(month %in% c(6:8)) %>% 
+  filter(month %in% c(1:9)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -118,17 +122,25 @@ df %>%
            m > mm + iqr ~ "2",
            m <= mm + iqr ~ "3")) %>% 
   ungroup() %>%
-  ggplot(aes(month, m, fill = col)) +
-  geom_col(show.legend = T) +
+  ggplot(aes(month, m)) +
+  geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(m, 1)), size = 3, hjust = -0.1, angle = 90) +
+  geom_text(data = t_year,
+            aes(label = paste(round(mean_year, 1), "(\u00B0C)"), x = 3, y = 50),
+            size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:") +
   theme(text = element_text(size = 14), legend.position = "top") +
   facet_wrap(vars(year))
 
+d_year <- df %>% 
+  filter(month %in% c(1:9)) %>%
+  summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
+  summarise(s_year = sum(s), .by = year)
+  
 df %>% 
-  filter(month %in% c(6:8)) %>%
+  filter(month %in% c(1:9)) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(ss = round(mean(s, na.rm = T), 1), 
@@ -139,9 +151,12 @@ df %>%
            s > ss + iqr ~ "2",
            s <= ss + iqr ~ "3")) %>% 
   ungroup() %>%
-  ggplot(aes(month, s, fill = col)) +
-  geom_col(show.legend = T) +
+  ggplot(aes(month, s)) +
+  geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(s, 0)), size = 3, hjust = -0.1, angle = 90) +
+  geom_text(data = d_year, 
+            aes(label = paste(round(s_year, 0), "(mm)"), x = 7, y = 250), 
+            size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = c("1" = "blue" , "2" = "#0096FF" , "3" = "green",
                                "4" = "orange", "5" = "red"), 
