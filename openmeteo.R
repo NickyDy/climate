@@ -69,7 +69,7 @@ df <- weather_history(
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "8", year == 2024) %>%
+  filter(month == "9", year == 2024) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -219,7 +219,7 @@ df %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
 #-----------------------------------------------------------------------------------------------
 daily %>% 
-  filter(month %in% c(8)) %>% 
+  filter(month %in% c(9)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr ~ "1",
@@ -244,7 +244,7 @@ daily %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "top")
 
 daily %>% 
-  filter(month %in% c(8)) %>% 
+  filter(month %in% c(9)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(location, year, month)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
@@ -272,8 +272,13 @@ colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = 
 labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
             "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
 
+t_daily <- daily %>% 
+  filter(month %in% c(1:9)) %>% 
+  summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
+  summarise(mean_daily = mean(m), .by = year)
+
 daily %>%
-  filter(month %in% c(6:8)) %>% 
+  filter(month %in% c(1:9)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -284,17 +289,26 @@ daily %>%
            m > mm + iqr ~ "2",
            m <= mm + iqr ~ "3")) %>% 
   ungroup() %>%
-  ggplot(aes(month, m, fill = col)) +
-  geom_col(show.legend = T) +
-  geom_text(aes(label = round(m, 1)), size = 3.3, vjust = -0.2) +
+  ggplot(aes(month, m)) +
+  geom_col(aes(fill = col), show.legend = T) +
+  geom_text(aes(label = round(m, 1)), size = 3.3, hjust = -0.1, angle = 90) +
+  geom_text(data = t_daily,
+            aes(label = paste(round(mean_daily, 1), "(\u00B0C)"), x = 3, y = 60),
+            size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:") +
   theme(text = element_text(size = 16), legend.position = "top") +
   facet_wrap(vars(year))
 
+d_daily <- daily %>%
+  filter(month %in% c(1:9)) %>% 
+  summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(location, year, month)) %>%
+  summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
+  summarise(d_daily = sum(sm), .by = year)
+  
 daily %>%
-  filter(month %in% c(6:8)) %>% 
+  filter(month %in% c(1:9)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(location, year, month)) %>%
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
@@ -306,9 +320,12 @@ daily %>%
            sm > ss + iqr ~ "2",
            sm <= ss + iqr ~ "3")) %>% 
   ungroup() %>%
-  ggplot(aes(month, sm, fill = col)) +
-  geom_col(show.legend = T) +
+  ggplot(aes(month, sm)) +
+  geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(sm, 0)), size = 3.5, hjust = -0.1, angle = 90) +
+  geom_text(data = d_daily, 
+            aes(label = paste(round(d_daily, 0), "(mm)"), x = 7, y = 350), 
+            size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = c("1" = "blue" , "2" = "#0096FF" , "3" = "green",
                                "4" = "orange", "5" = "red"), 
