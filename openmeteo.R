@@ -47,7 +47,7 @@ df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
 df <- weather_history(
-  location = "yambol",
+  location = "sofia",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -69,11 +69,12 @@ df <- weather_history(
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "9", year == 2024) %>%
+  filter(month == "10", year == 2024) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
-                         name == "prec_sum" & value > 0 ~ "precipitation",
+                         name == "rain_sum" & value > 0 ~ "rain",
+                         name == "snow_sum" & value > 0 ~ "snow",
                          name == "wind_max" & value > 30 ~ "windy",
                          name == "wind_max" & value < 30 ~ "notwindy",
                          .default = "normal")) %>%
@@ -81,22 +82,24 @@ df %>%
            "Максимална температура (\u00B0C)" = "temp_max",
            "Средна температура (\u00B0C)" = "temp_mean",
            "Минимална температура (\u00B0C)" = "temp_min",
-           "Валеж (mm)" = "prec_sum",
+           "Дъжд (mm)" = "rain_sum",
+           "Сняг (cm)" = "snow_sum",
            "Максимална скорост на вятъра (km/h)" = "wind_max"),
          name = fct_relevel(name,
            "Максимална температура (\u00B0C)",
            "Средна температура (\u00B0C)",
            "Минимална температура (\u00B0C)",
-           "Валеж (mm)",
+           "Дъжд (mm)",
+           "Сняг (cm)",
            "Максимална скорост на вятъра (km/h)")) %>%
-  filter(!name %in% c("rain_sum", "snow_sum")) %>% 
+  filter(!name %in% c("prec_sum", "wind_dir")) %>%
   ggplot(aes(day, value, fill = col)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = round(value, 1)), size = 4, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.3)), n.breaks = 4) +
   scale_fill_manual(values = c("hot" = "red", "normal" = "orange", 
-                               "cold" = "lightblue", "precipitation" = "blue",
-                               "windy" = "green", "snowing" = "#00FFFF", "notwindy" = "darkgreen")) +
+                               "cold" = "lightblue", "rain" = "blue",
+                               "windy" = "green", "snow" = "#00FFFF", "notwindy" = "darkgreen")) +
   #geom_hline(data = m_mont, aes(yintercept = m), linewidth = 0.5, lty = 2, color = "black") +
   labs(x = "Дни", y = NULL) + 
   theme(text = element_text(size = 16)) +
@@ -106,12 +109,12 @@ colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = 
 labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
             "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
 t_year <- df %>% 
-  filter(month %in% c(1:9)) %>% 
+  filter(month %in% c(1:10)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(mean_year = mean(m), .by = year)
 
 df %>% 
-  filter(month %in% c(1:9)) %>% 
+  filter(month %in% c(1:10)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -135,12 +138,12 @@ df %>%
   facet_wrap(vars(year))
 
 d_year <- df %>% 
-  filter(month %in% c(1:9)) %>%
+  filter(month %in% c(1:10)) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(s_year = sum(s), .by = year)
   
 df %>% 
-  filter(month %in% c(1:9)) %>%
+  filter(month %in% c(1:10)) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(ss = round(mean(s, na.rm = T), 1), 
@@ -155,7 +158,7 @@ df %>%
   geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(s, 0)), size = 3, hjust = -0.1, angle = 90) +
   geom_text(data = d_year, 
-            aes(label = paste(round(s_year, 0), "(mm)"), x = 7, y = 250), 
+            aes(label = paste(round(s_year, 0), "(mm)"), x = 7, y = 350), 
             size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = c("1" = "blue" , "2" = "#0096FF" , "3" = "green",

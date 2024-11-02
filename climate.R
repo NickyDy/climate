@@ -7,7 +7,7 @@ temp <- read_parquet("climate/temp.parquet")
 #-------------------------------------------
 rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   html_element("table") %>% html_table() %>%
-  select(2:17, 19:34) %>% slice(12:21, 25:32) %>%
+  filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% select(2:17, 19:34) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -21,7 +21,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 9,
+    year = 2024, month = 11,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -44,7 +44,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
 
 temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   html_element("table") %>% html_table() %>%
-  select(2:17, 19:34) %>% slice(12:21, 25:31) %>%
+  filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% select(2:17, 19:34) %>% 
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -59,7 +59,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 9,
+    year = 2024, month = 11,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -85,7 +85,7 @@ rain <- bind_rows(rain, rain_new) %>%
 temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 temp %>% 
-  filter(month %in% c(9), elev < 1200, status == "official") %>%
+  filter(month %in% c(11), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr ~ "1",
@@ -104,12 +104,12 @@ temp %>%
                                "3" = "По-хладно от средното",
                                "4" = "Много по-хладно от средното")) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Септември") +
+       fill = "Легенда:", title = "Месец: Ноември") +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top")
 
 rain %>% 
-  filter(month %in% c(9), elev < 1200, status == "official") %>% 
+  filter(month %in% c(11), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
@@ -128,8 +128,8 @@ rain %>%
                                "1" = "По-дъждовно от средното", 
                                "2" = "По-сухо от средното",
                                "3" = "Много по-сухо от средното")) +
-  labs(x = NULL, y = "Месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Септември") +
+  labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
+       fill = "Легенда:", title = "Месец: Ноември") +
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
@@ -137,12 +137,15 @@ labels <- c("1" = "Много по-топло от средното", "2" = "П�
             "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
 
 t_year <- temp %>%
-  filter(month %in% c(1:9), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1:11), elev < 1200, status == "official") %>% 
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(mean_year = mean(m), .by = year)
+
+t_mean <- t_year %>% 
+  summarise(tot_mean = round(mean(mean_year), 1))
   
 temp %>%
-  filter(month %in% c(1:9), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1:11), elev < 1200, status == "official") %>% 
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -161,18 +164,24 @@ temp %>%
             size = 8, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
-  labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:") +
-  theme(text = element_text(size = 16), legend.position = "top") +
+  labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
+       title = paste0("Средно за периода (2000-2024 г.): ", t_mean$tot_mean, " (\u00B0C)")) +
+  theme(text = element_text(size = 16), legend.position = "top",
+        plot.title = element_text(color = "red", face = "bold"),
+        legend.justification = c(1, 0)) +
   facet_wrap(vars(year))
 
 d_year <- rain %>%
-  filter(month %in% c(1:9), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1:11), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(s_year = sum(sm), .by = year)
+
+d_mean <- d_year %>% 
+  summarise(tot_mean = round(mean(s_year), 0))
   
 rain %>%
-  filter(month %in% c(1:9), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1:11), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
@@ -198,8 +207,11 @@ rain %>%
                                "3" = "Умерено",
                                "4" = "По-сухо от средното",
                                "5" = "Много по-сухо от средното")) +
-  labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:", title = NULL) +
-  theme(text = element_text(size = 16), legend.position = "top") +
+  labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:", 
+       title = paste0("Средно за периода (2004-2024 г.): ", d_mean$tot_mean, " (mm)")) +
+  theme(text = element_text(size = 16), legend.position = "top", 
+        plot.title = element_text(color = "red", face = "bold"),
+        legend.justification = c(1, 0)) +
   facet_wrap(vars(year))
 #---------------------------------------------------------------
 mean_temp_month <- temp %>%
