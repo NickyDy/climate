@@ -47,7 +47,7 @@ df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
 df <- weather_history(
-  location = "sofia",
+  location = "burgas",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -69,7 +69,7 @@ df <- weather_history(
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "10", year == 2024) %>%
+  filter(month == "11", year == 2024) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -109,12 +109,15 @@ colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = 
 labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
             "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
 t_year <- df %>% 
-  filter(month %in% c(1:10)) %>% 
+  filter(month %in% c(1:11)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(mean_year = mean(m), .by = year)
 
+t_mean <- t_year %>% 
+  summarise(tot_mean = round(mean(mean_year), 1))
+
 df %>% 
-  filter(month %in% c(1:10)) %>% 
+  filter(month %in% c(1:11)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(mm = round(mean(m, na.rm = T), 1), 
@@ -133,17 +136,23 @@ df %>%
             size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
-  labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:") +
-  theme(text = element_text(size = 14), legend.position = "top") +
+  labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
+       title = paste0("Средно за периода (1940-2024 г.): ", t_mean$tot_mean, " (\u00B0C)")) +
+  theme(text = element_text(size = 14), legend.position = "top",
+        plot.title = element_text(color = "red", face = "bold"),
+        legend.justification = c(1, 0)) +
   facet_wrap(vars(year))
 
 d_year <- df %>% 
-  filter(month %in% c(1:10)) %>%
+  filter(month %in% c(1:11)) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(s_year = sum(s), .by = year)
+
+d_mean <- d_year %>% 
+  summarise(tot_mean = round(mean(s_year), 0))
   
 df %>% 
-  filter(month %in% c(1:10)) %>%
+  filter(month %in% c(1:11)) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
   mutate(ss = round(mean(s, na.rm = T), 1), 
@@ -168,8 +177,11 @@ df %>%
                                "3" = "Умерено",
                                "4" = "По-сухо от средното",
                                "5" = "Много по-сухо от средното")) +
-  labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:") +
-  theme(text = element_text(size = 14), legend.position = "top") +
+  labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:",
+       title = paste0("Средно за периода (1940-2024 г.): ", d_mean$tot_mean, " (mm)")) +
+  theme(text = element_text(size = 14), legend.position = "top",
+        plot.title = element_text(color = "red", face = "bold"),
+        legend.justification = c(1, 0)) +
   facet_wrap(vars(year))
 #-----------------------
 df %>% 
