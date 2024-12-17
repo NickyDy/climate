@@ -21,7 +21,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 11,
+    year = 2024, month = 12,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -40,7 +40,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
   pivot_longer(7:37, names_to = "day", values_to = "rain") %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
-  mutate(across(c(3, 8), as.double))
+  mutate(rain = parse_number(rain))
 
 temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   html_element("table") %>% html_table() %>%
@@ -59,7 +59,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 11,
+    year = 2024, month = 12,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -78,14 +78,14 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
   pivot_longer(7:37, names_to = "day", values_to = "temp") %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
-  mutate(across(c(3, 8), as.double))
+  mutate(temp = parse_number(temp))
 
 rain <- bind_rows(rain, rain_new) %>% 
   mutate(month = factor(month, levels = c(1:12)))
 temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 temp %>% 
-  filter(month %in% c(11), elev < 1200, status == "official") %>%
+  filter(month %in% c(12), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr ~ "1",
@@ -104,12 +104,12 @@ temp %>%
                                "3" = "По-хладно от средното",
                                "4" = "Много по-хладно от средното")) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Ноември") +
+       fill = "Легенда:", title = "Месец: Декември") +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top")
 
 rain %>% 
-  filter(month %in% c(11), elev < 1200, status == "official") %>% 
+  filter(month %in% c(12), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
@@ -129,7 +129,7 @@ rain %>%
                                "2" = "По-сухо от средното",
                                "3" = "Много по-сухо от средното")) +
   labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Ноември") +
+       fill = "Легенда:", title = "Месец: Декември") +
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
@@ -172,7 +172,7 @@ temp %>%
   facet_wrap(vars(year))
 
 d_year <- rain %>%
-  filter(month %in% c(1:11), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1:12), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(s_year = sum(sm), .by = year)
