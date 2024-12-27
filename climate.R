@@ -38,7 +38,8 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
     year %in% c("2020", "2021", "2022", "2023", "2024") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
-  pivot_longer(7:37, names_to = "day", values_to = "rain") %>% 
+  pivot_longer(7:37, names_to = "day", values_to = "rain") %>%
+  mutate(rain = str_remove(rain, "---")) %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(rain = parse_number(rain))
 
@@ -77,6 +78,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
     year %in% c("2020", "2021", "2022", "2023", "2024") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
   pivot_longer(7:37, names_to = "day", values_to = "temp") %>% 
+  mutate(temp = str_remove(temp, "---")) %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(temp = parse_number(temp))
 
@@ -165,7 +167,8 @@ temp %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
-       title = paste0("Средно за периода (2000-2024 г.): ", t_mean$tot_mean, " (\u00B0C)")) +
+       title = paste0("Средно за периода (", first(t_year$year), "-", 
+                      last(t_year$year), " г.): ", t_mean$tot_mean, " (\u00B0C)")) +
   theme(text = element_text(size = 16), legend.position = "top",
         plot.title = element_text(color = "red", face = "bold"),
         legend.justification = c(1, 0)) +
@@ -208,7 +211,8 @@ rain %>%
                                "4" = "По-сухо от средното",
                                "5" = "Много по-сухо от средното")) +
   labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:", 
-       title = paste0("Средно за периода (2004-2024 г.): ", d_mean$tot_mean, " (mm)")) +
+       title = paste0("Средно за периода (", first(d_year$year), "-", 
+                      last(d_year$year), " г.): ", d_mean$tot_mean, " (mm)")) +
   theme(text = element_text(size = 16), legend.position = "top", 
         plot.title = element_text(color = "red", face = "bold"),
         legend.justification = c(1, 0)) +
