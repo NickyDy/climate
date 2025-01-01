@@ -21,7 +21,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 12,
+    year = 2025, month = 1,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -36,7 +36,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   mutate(decade = case_when(
     year %in% c("2004", "2005", "2006", "2007", "2008", "2009") ~ "00s",
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
-    year %in% c("2020", "2021", "2022", "2023", "2024") ~ "20s")) %>%
+    year %in% c("2020", "2021", "2022", "2023", "2024", "2025") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
   pivot_longer(7:37, names_to = "day", values_to = "rain") %>%
   mutate(rain = str_remove(rain, "---")) %>% 
@@ -60,7 +60,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), 
     .after = station,
-    year = 2024, month = 12,
+    year = 2025, month = 1,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -75,7 +75,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   mutate(decade = case_when(
     year %in% c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009") ~ "00s",
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
-    year %in% c("2020", "2021", "2022", "2023", "2024") ~ "20s")) %>%
+    year %in% c("2020", "2021", "2022", "2023", "2024", "2025") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
   pivot_longer(7:37, names_to = "day", values_to = "temp") %>% 
   mutate(temp = str_remove(temp, "---")) %>% 
@@ -87,7 +87,7 @@ rain <- bind_rows(rain, rain_new) %>%
 temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 temp %>% 
-  filter(month %in% c(12), elev < 1200, status == "official") %>%
+  filter(month %in% c(1), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr ~ "1",
@@ -106,12 +106,13 @@ temp %>%
                                "3" = "По-хладно от средното",
                                "4" = "Много по-хладно от средното")) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Декември") +
+       fill = "Легенда:", title = "Месец: Януари") +
   guides(fill = guide_legend(nrow = 1)) +
-  theme(text = element_text(size = 16), legend.position = "top")
+  theme(text = element_text(size = 16), legend.position = "top",
+        legend.justification = c(1, 0))
 
 rain %>% 
-  filter(month %in% c(12), elev < 1200, status == "official") %>% 
+  filter(month %in% c(1), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
@@ -131,8 +132,9 @@ rain %>%
                                "2" = "По-сухо от средното",
                                "3" = "Много по-сухо от средното")) +
   labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Декември") +
-  theme(text = element_text(size = 16), legend.position = "top")
+       fill = "Легенда:", title = "Месец: Януари") +
+  theme(text = element_text(size = 16), legend.position = "top",
+        legend.justification = c(1, 0))
 #---------------------------------------------------------------
 colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
@@ -160,7 +162,7 @@ temp %>%
   ungroup() %>%
   ggplot(aes(month, m)) +
   geom_col(aes(fill = col), show.legend = T) +
-  geom_text(aes(label = round(m, 1)), size = 3.5, vjust = -0.2) +
+  geom_text(aes(label = round(m, 1)), size = 3, vjust = -0.2) +
   geom_text(data = t_year,
             aes(label = paste(round(mean_year, 1), "(\u00B0C)"), x = 7, y = 40),
             size = 8, vjust = -0.2) +
