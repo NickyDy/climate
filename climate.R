@@ -166,7 +166,7 @@ temp %>%
   geom_text(data = t_year,
             aes(label = paste(round(mean_year, 1), "(\u00B0C)"), x = 7, y = 40),
             size = 8, vjust = -0.2) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7))) +
   scale_fill_manual(values = colors, labels = labels) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
        title = paste0("Средно за периода (", first(t_year$year), "-", 
@@ -204,7 +204,7 @@ rain %>%
   geom_text(data = d_year, 
             aes(label = paste(round(s_year, 0), "(mm)"), x = 7, y = 200), 
             size = 8, vjust = -0.2) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7))) +
   scale_fill_manual(values = c("1" = "blue" , "2" = "#0096FF" , "3" = "green",
                                "4" = "orange", "5" = "red"), 
                     labels = c("1" = "Много по-дъждовно от средното", 
