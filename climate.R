@@ -95,9 +95,9 @@ temp %>%
     m < mm - iqr ~ "4",
     m <= mm ~ "3")) %>%
   ggplot(aes(year, m, fill = col)) +
+  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
   geom_text(aes(label = paste0(round(m, 1))), size = 5, vjust = -0.3) +
-  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
   scale_fill_manual(values = c("1" = "red", "2" = "orange" ,
                                "3" = "green", "4" = "#0096FF"), 
@@ -121,9 +121,9 @@ rain %>%
     s > ss ~ "1",
     s <= ss ~ "2")) %>%
   ggplot(aes(year, s, fill = col)) +
+  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
   geom_text(aes(label = paste0(round(s, 0))), size = 5, vjust = -0.3) +
-  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
   scale_fill_manual(values = c("0" = "blue" , "1" = "#0096FF" , 
                                "2" = "orange", "3" = "red"), 
