@@ -1,9 +1,8 @@
 library(tidyverse)
 library(rvest)
-library(arrow)
 
-rain <- read_parquet("climate/rain.parquet")
-temp <- read_parquet("climate/temp.parquet")
+rain <- read_rds("climate/rain.rds")
+temp <- read_rds("climate/temp.rds")
 #-------------------------------------------
 rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   html_element("table") %>% html_table() %>%
@@ -21,7 +20,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), 
     .after = station,
-    year = 2025, month = 1,
+    year = 2025, month = 3,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -32,8 +31,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
       station == "Сливен" ~ 257, station == "Ямбол" ~ 147, station == "Бургас" ~ 16,
       station == "Петрич" ~ 200, station == "Сандански" ~ 206, station == "Стралджа" ~ 139,
       station == "Кърджали" ~ 330, station == "Шумен" ~ 218, station == "с. Гложене" ~ 64)) %>%
-  #mutate(station = fct_recode(station, "Гложене" = "с. Гложене")) %>%
-  mutate(decade = case_when(
+ mutate(decade = case_when(
     year %in% c("2004", "2005", "2006", "2007", "2008", "2009") ~ "00s",
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
     year %in% c("2020", "2021", "2022", "2023", "2024", "2025") ~ "20s")) %>%
@@ -45,7 +43,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
 
 temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   html_element("table") %>% html_table() %>%
-  filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% select(2:17, 19:34) %>% 
+  filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% select(2:17, 19:34) %>%
   rename(station = X2) %>% rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
@@ -60,7 +58,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), 
     .after = station,
-    year = 2025, month = 1,
+    year = 2025, month = 3,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -87,7 +85,7 @@ rain <- bind_rows(rain, rain_new) %>%
 temp <- bind_rows(temp, temp_new)
 #-----------------------------------------------
 temp %>% 
-  filter(month %in% c(1), elev < 1200, status == "official") %>%
+  filter(month %in% c(3), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr ~ "1",
@@ -95,7 +93,6 @@ temp %>%
     m < mm - iqr ~ "4",
     m <= mm ~ "3")) %>%
   ggplot(aes(year, m, fill = col)) +
-  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
   geom_text(aes(label = paste0(round(m, 1))), size = 5, vjust = -0.3) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
@@ -106,13 +103,13 @@ temp %>%
                                "3" = "По-хладно от средното",
                                "4" = "Много по-хладно от средното")) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Януари") +
+       fill = "Легенда:", title = "Месец: Март") +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
 
 rain %>% 
-  filter(month %in% c(1), elev < 1200, status == "official") %>% 
+  filter(month %in% c(3), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
@@ -121,7 +118,6 @@ rain %>%
     s > ss ~ "1",
     s <= ss ~ "2")) %>%
   ggplot(aes(year, s, fill = col)) +
-  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
   geom_text(aes(label = paste0(round(s, 0))), size = 5, vjust = -0.3) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
@@ -132,7 +128,7 @@ rain %>%
                                "2" = "По-сухо от средното",
                                "3" = "Много по-сухо от средното")) +
   labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Януари") +
+       fill = "Легенда:", title = "Месец: Март") +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
 #---------------------------------------------------------------
@@ -379,7 +375,7 @@ rain %>%
   scale_fill_manual(values = c("#F8766D", "#00BFC4"),
                     labels = c("По-сухо от средното", "По-дъждовно от средното"))
 #----------------------------------------------------
-write_parquet(rain, "climate/rain.parquet")
-write_parquet(temp, "climate/temp.parquet")
-write_parquet(rain, "shiny/climate/rain.parquet")
-write_parquet(temp, "shiny/climate/temp.parquet")
+write_rds(rain, "climate/rain.rds")
+write_rds(temp, "climate/temp.rds")
+write_rds(rain, "shiny/climate/rain.rds")
+write_rds(temp, "shiny/climate/temp.rds")

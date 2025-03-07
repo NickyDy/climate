@@ -1,5 +1,4 @@
 library(tidyverse)
-library(arrow)
 library(openmeteo)
 library(tidytext)
 #library(rOstluft.plot)
@@ -44,7 +43,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "1", year == 2025) %>%
+  filter(month == "3", year == 2025) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -112,7 +111,8 @@ df %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
   scale_fill_manual(values = colors, labels = labels) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
-       title = paste0("Средно за периода (1940-2024 г.): ", t_mean$tot_mean, " (\u00B0C)")) +
+       title = paste0("Средно за периода (", first(t_year$year), "-", 
+                      last(t_year$year), " г.): ", t_mean$tot_mean, " (mm)")) +
   theme(text = element_text(size = 14), legend.position = "top",
         plot.title = element_text(color = "red", face = "bold"),
         legend.justification = c(1, 0)) +
@@ -153,7 +153,8 @@ df %>%
                                "4" = "По-сухо от средното",
                                "5" = "Много по-сухо от средното")) +
   labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:",
-       title = paste0("Средно за периода (1940-2024 г.): ", d_mean$tot_mean, " (mm)")) +
+       title = paste0("Средно за периода (", first(d_year$year), "-", 
+                      last(d_year$year), " г.): ", d_mean$tot_mean, " (mm)")) +
   theme(text = element_text(size = 14), legend.position = "top",
         plot.title = element_text(color = "red", face = "bold"),
         legend.justification = c(1, 0)) +
@@ -620,32 +621,6 @@ df %>%
   labs(y = "Максинална скорост на вятъра (km/h)") +
   theme(text = element_text(size = 12)) +
   facet_wrap(vars(year), ncol = 15)
-
-daily <- read_parquet("shiny/climate/daily.parquet") %>% 
-  #filter(!location %in% c("Връх Мусала", "Връх Ботев", "Връх Черни връх")) %>% 
-  mutate(decade = case_when(
-    year %in% c("1940", "1941", "1942", "1943", "1944", "1945", "1946", "1947", "1948", "1949") ~ "1940-1949",
-    year %in% c("1950", "1951", "1952", "1953", "1954", "1955", "1956", "1957", "1958", "1959") ~ "1950-1959",
-    year %in% c("1960", "1961", "1962", "1963", "1964", "1965", "1966", "1967", "1968", "1969") ~ "1960-1969",
-    year %in% c("1970", "1971", "1972", "1973", "1974", "1975", "1976", "1977", "1978", "1979") ~ "1970-1979",
-    year %in% c("1980", "1981", "1982", "1983", "1984", "1985", "1986", "1987", "1988", "1989") ~ "1980-1989",
-    year %in% c("1990", "1991", "1992", "1993", "1994", "1995", "1996", "1997", "1998", "1999") ~ "1990-1999",
-    year %in% c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009") ~ "2000-2009",
-    year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "2010-2019",
-    year %in% c("2020", "2021", "2022", "2023", "2024") ~ "2020-2024")) %>%
-  relocate(decade, .after = date) %>% 
-  mutate(decade = fct_inorder(decade))
-
-daily %>%
-  # filter(location == "Разград") %>%
-  group_by(location, date = floor_date(date, "year")) %>%
-  summarise(s = sum(prec_sum, na.rm = T)) %>%
-  ggplot(aes(date, s)) +
-  geom_point() +
-  geom_smooth(se = F, method = loess) +
-  theme(text = element_text(size = 16)) +
-  labs(x = NULL, y = "Годишно количество на валежа (mm)", title = NULL) +
-  facet_wrap(vars(location))
 
 med <- daily %>% filter(!decade == "2020-2024") %>% 
   summarise(p = sum(prec_sum, na.rm = T), .by = c(location, decade, year)) %>%
