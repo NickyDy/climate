@@ -27,6 +27,19 @@ df <- weather_history(
          day = factor(day(date)))
 
 df %>% 
+  summarise(sum_rain = sum(prec_sum, na.rm = T), .by = c(year, month)) %>% 
+  summarise(mean_rain = mean(sum_rain), .by = c(month)) %>%
+  ggplot(aes(month, mean_rain)) +
+  geom_col(fill = "blue") +
+  geom_text(aes(label = paste0(round(mean_rain, 0), " mm")), size = 6, vjust = -0.3) +
+  coord_cartesian(expand = F, ylim = c(0, 100)) +
+  labs(x = "Месеци", y = "Средно количетсво дъжд") +
+  theme_bw() +
+  theme(text = element_text(size = 20), 
+        axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank())
+
+df %>% 
   summarise(snow = sum(snow_sum, na.rm = T), .by = c(year, month)) %>% 
   filter(snow > 0) %>% 
   mutate(month = reorder_within(month, snow, year),
@@ -43,7 +56,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "3", year == 2025) %>%
+  filter(month == "4", year == 2025) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -79,9 +92,9 @@ df %>%
   theme(text = element_text(size = 16)) +
   facet_wrap(vars(name), ncol = 1, dir = "v")
 #--------------------------------------------
-colors <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
-labels <- c("1" = "Много по-топло от средното", "2" = "По-топло от средното" ,
-            "3" = "Умерено", "4" = "По-хладно от средното", "5" = "Много по-хладно от средното")
+colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
+labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
+
 t_year <- df %>% 
   filter(month %in% c(1:12)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
@@ -96,11 +109,11 @@ df %>%
   group_by(month) %>% 
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
-           m < mm - iqr * 1.5 ~ "5",
-           m > mm + iqr * 1.5 ~ "1",
-           m < mm - iqr ~ "4",
-           m > mm + iqr ~ "2",
-           m <= mm + iqr ~ "3")) %>% 
+           m < mm - iqr * 1.2 ~ "5",
+           m > mm + iqr * 1.2 ~ "1",
+           m < mm - iqr * 0.5 ~ "4",
+           m > mm + iqr * 0.5 ~ "2",
+           m <= mm + iqr * 0.5 ~ "3")) %>% 
   ungroup() %>%
   ggplot(aes(month, m)) +
   geom_col(aes(fill = col), show.legend = T) +
@@ -109,14 +122,17 @@ df %>%
             aes(label = paste(round(mean_year, 1), "(\u00B0C)"), x = 3, y = 60),
             size = 4.5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
-  scale_fill_manual(values = colors, labels = labels) +
+  scale_fill_manual(values = colors_temp, labels = labels_temp) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
        title = paste0("Средно за периода (", first(t_year$year), "-", 
-                      last(t_year$year), " г.): ", t_mean$tot_mean, " (mm)")) +
+                      last(t_year$year), " г.): ", t_mean$tot_mean, " (\u00B0C)")) +
   theme(text = element_text(size = 14), legend.position = "top",
         plot.title = element_text(color = "red", face = "bold"),
         legend.justification = c(1, 0)) +
   facet_wrap(vars(year))
+
+colors_rain <- c("1" = "blue" , "2" = "#0096FF" , "3" = "green", "4" = "orange", "5" = "red")
+labels_rain <- c("1" = "Много дъждовно", "2" = "Дъждовно", "3" = "Умерено", "4" = "Сухо", "5" = "Много сухо")
 
 d_year <- df %>% 
   filter(month %in% c(1:12)) %>%
@@ -132,11 +148,11 @@ df %>%
   group_by(month) %>% 
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
-           s < ss - iqr * 1.5 ~ "5",
-           s > ss + iqr * 1.5 ~ "1",
-           s < ss - iqr ~ "4",
-           s > ss + iqr ~ "2",
-           s <= ss + iqr ~ "3")) %>% 
+           s < ss - iqr ~ "5",
+           s > ss + iqr ~ "1",
+           s < ss - iqr * 0.5 ~ "4",
+           s > ss + iqr * 0.5 ~ "2",
+           s <= ss + iqr * 0.5 ~ "3")) %>% 
   ungroup() %>%
   ggplot(aes(month, s)) +
   geom_col(aes(fill = col), show.legend = T) +
@@ -145,13 +161,7 @@ df %>%
             aes(label = paste(round(s_year, 0), "(mm)"), x = 7, y = 350), 
             size = 5, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 4) +
-  scale_fill_manual(values = c("1" = "blue" , "2" = "#0096FF" , "3" = "green",
-                               "4" = "orange", "5" = "red"), 
-                    labels = c("1" = "Много по-дъждовно от средното", 
-                               "2" = "По-дъждовно от средното",
-                               "3" = "Умерено",
-                               "4" = "По-сухо от средното",
-                               "5" = "Много по-сухо от средното")) +
+  scale_fill_manual(values = colors_rain, labels = labels_rain) +
   labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:",
        title = paste0("Средно за периода (", first(d_year$year), "-", 
                       last(d_year$year), " г.): ", d_mean$tot_mean, " (mm)")) +
