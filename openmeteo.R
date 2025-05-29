@@ -7,7 +7,7 @@ df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
 df <- weather_history(
-  location = "yambol",
+  location = "sofia",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -190,9 +190,9 @@ df %>%
            m > mm + iqr * 0.5 ~ "2",
            m <= mm + iqr * 0.5 ~ "3")) %>% 
   ggplot(aes(year, m, fill = col)) +
+  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
   geom_text(aes(label = paste0(round(m, 1))), size = 3.5, hjust = -0.1, angle = 90) +
-  geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
   scale_fill_manual(values = colors_temp, labels = labels_temp) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
@@ -212,9 +212,9 @@ df %>%
            s > ss + iqr * 0.5 ~ "2",
            s <= ss + iqr * 0.5 ~ "3")) %>% 
   ggplot(aes(year, s, fill = col)) +
+  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
   geom_text(aes(label = paste0(round(s, 0))), size = 3.5, vjust = -0.2) +
-  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
   labs(x = NULL, y = "Месечно количество на валежите (mm)", fill = "Легенда:",
