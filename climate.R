@@ -8,9 +8,9 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   html_element("table") %>% 
   html_table() %>%
   filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% 
-  select(2:17, 19:34) %>%
+  select(2:17, 19:33) %>%
   rename(station = X2) %>% 
-  rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
+  rename_with(~ as.character(c(1:30)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
     station = str_remove_all(station, "\\)"),
@@ -22,7 +22,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
                      "Обзор", "Дупница", "Орландовци", "Бояна", "Княжево", "Панагюрище",
                      "Ямбол", "Петрич", "Стралджа", "Шумен") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), .after = station,
-    year = 2025, month = 5,
+    year = 2025, month = 6,
     elev = case_when(
       station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
       station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
@@ -38,7 +38,7 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
     year %in% c("2020", "2021", "2022", "2023", "2024", "2025") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
-  pivot_longer(7:37, names_to = "day", values_to = "rain") %>%
+  pivot_longer(7:36, names_to = "day", values_to = "rain") %>%
   mutate(rain = str_remove(rain, "---")) %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(rain = parse_number(rain))
@@ -47,9 +47,9 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   html_element("table") %>% 
   html_table() %>%
   filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% 
-  select(2:17, 19:34) %>%
+  select(2:17, 19:33) %>%
   rename(station = X2) %>% 
-  rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
+  rename_with(~ as.character(c(1:30)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
     station = str_remove_all(station, "\\)"),
@@ -62,7 +62,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
                      "Обзор", "Дупница", "Орландовци", "Бояна", "Княжево",
                      "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
                      "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), .after = station,
-    year = 2025, month = 5,
+    year = 2025, month = 6,
     elev = case_when(
       station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
       station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
@@ -79,7 +79,7 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
     year %in% c("2020", "2021", "2022", "2023", "2024", "2025") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
-  pivot_longer(7:37, names_to = "day", values_to = "temp") %>% 
+  pivot_longer(7:36, names_to = "day", values_to = "temp") %>% 
   mutate(temp = str_remove(temp, "---")) %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(temp = parse_number(temp))
@@ -94,8 +94,8 @@ colors_rain <- c("1" = "blue" , "2" = "#0096FF" , "3" = "green", "4" = "orange",
 labels_rain <- c("1" = "Много дъждовно", "2" = "Дъждовно", "3" = "Умерено", "4" = "Сухо", "5" = "Много сухо")
 
 temp %>% 
-  filter(month %in% c(5), elev < 1200, status == "official") %>%
-  summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
+  filter(month %in% c(6), elev < 1200, status == "official") %>%
+  summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr * 1.2 ~ "1",
     m < mm - iqr * 1.2 ~ "5",
@@ -110,14 +110,14 @@ temp %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   scale_fill_manual(values = colors_temp, labels = labels_temp) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Май") +
+       fill = "Легенда:", title = "Месец: Юни") +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
 rain %>% 
-  filter(month %in% c(5), elev < 1200, status == "official") %>% 
+  filter(month %in% c(6), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
-  summarise(s = mean(s, na.rm = T), .by = c(year, month)) %>% 
+  summarise(s = mean(s, na.rm = T), .by = c(year)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
     s > ss + iqr ~ "1",
     s < ss - iqr ~ "5",
@@ -132,7 +132,7 @@ rain %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
   labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Май") +
+       fill = "Легенда:", title = "Месец: Юни") +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
