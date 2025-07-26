@@ -110,7 +110,7 @@ temp %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   scale_fill_manual(values = colors_temp, labels = labels_temp) +
   labs(x = NULL, y = "Средна денонощна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Юни") +
+       fill = "Легенда:", title = NULL) +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
@@ -132,7 +132,7 @@ rain %>%
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
   labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Юни") +
+       fill = "Легенда:", title = NULL) +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))

@@ -66,7 +66,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "6", year == 2025) %>%
+  filter(month == "7", year == 2025) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -180,7 +180,7 @@ df %>%
   facet_wrap(vars(year))
 #-----------------------
 df %>% 
-  filter(month %in% c(6)) %>% 
+  filter(month %in% c(7)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -202,7 +202,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(6)) %>% 
+  filter(month %in% c(7)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
@@ -226,7 +226,7 @@ df %>%
 #-----------------------------------------------------------------------------------
 #DECADE
 df %>% 
-  filter(month %in% c(6)) %>% 
+  filter(month %in% c(7)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(decade)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -247,7 +247,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 
 df %>% 
-  filter(month %in% c(6)) %>% 
+  filter(month %in% c(7)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(decade)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
