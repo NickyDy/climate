@@ -7,7 +7,7 @@ df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
 df <- weather_history(
-  location = "sofia",
+  location = "yambol",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -180,7 +180,7 @@ df %>%
   facet_wrap(vars(year))
 #-----------------------
 df %>% 
-  filter(month %in% c(7)) %>% 
+  filter(month %in% c(8)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
