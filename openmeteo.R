@@ -66,7 +66,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "7", year == 2025) %>%
+  filter(month == "9", year == 2025) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
