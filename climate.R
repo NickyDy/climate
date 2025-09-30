@@ -137,11 +137,12 @@ rain %>%
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
 
-# rain %>% 
-#   mutate(across(year:day, as.character)) %>% 
-#   mutate(date = make_date(year, month, day)) %>% 
-#   filter(rain > 30) %>% 
-#   ggplot(aes(date, rain, group = decade)) +
+# rain %>%
+#   summarise(rain = sum(rain, na.rm = T), .by = c(station, year, month)) %>% 
+#   mutate(across(year:month, as.character)) %>%
+#   mutate(date = make_date(year, month)) %>%
+#   filter(rain > 100) %>%
+#   ggplot(aes(date, rain)) +
 #   geom_point() +
 #   geom_smooth(se = F)
 #======================================
