@@ -139,7 +139,7 @@ rain %>%
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
-
+#--------------------------------------
 temp %>% 
   filter(month == 10, elev < 1200, status == "official") %>%
   summarise(mean_temp = mean(temp, na.rm = T), .by = c(year, month, day)) %>%
@@ -185,14 +185,12 @@ rain %>%
 #   ggplot(aes(date, rain)) +
 #   geom_point() +
 #   geom_smooth(se = F)
-#======================================
-t_year <- temp %>%
+#----------------------
+t_year <- temp %>% 
   filter(month %in% c(1:12), elev < 1200, status == "official") %>% 
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year, month)) %>%
-  summarise(mean_year = mean(m), .by = year)
-
-t_mean <- t_year %>% 
-  summarise(tot_mean = round(mean(mean_year), 1))
+  summarise(mean_year = mean(m), .by = year) %>% 
+  mutate(tot_mean = round(mean(mean_year), 1))
   
 temp %>%
   filter(month %in% c(1:12), elev < 1200, status == "official") %>% 
@@ -206,31 +204,31 @@ temp %>%
     m > mm + iqr * 0.5 ~ "2",
     m <= mm + iqr * 0.5 ~ "3")) %>% 
   ungroup() %>%
+  group_by(year) %>% 
+  mutate(mean_year = mean(m, na.rm = T), 
+         label_year = paste0(year, " - ", round(mean_year, 1), " (\u00B0C)"),
+         total_mean = mean(mean_year, na.rm = T)) %>% 
+  ungroup() %>% 
   ggplot(aes(month, m)) +
   geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(m, 1)), size = 3, vjust = -0.2) +
-  geom_text(data = t_year,
-            aes(label = paste(round(mean_year, 1), "(\u00B0C)"), x = 7, y = 40),
-            size = 8, vjust = -0.2) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
   scale_fill_manual(values = colors_temp, labels = labels_temp) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
        title = paste0("Средно за периода (", first(t_year$year), "-", 
-                      last(t_year$year), " г.): ", t_mean$tot_mean, " (\u00B0C)")) +
+                      last(t_year$year), " г.): ", t_year$tot_mean, " (\u00B0C)")) +
   theme(text = element_text(size = 16), legend.position = "top",
         plot.title = element_text(color = "red", face = "bold"),
         legend.justification = c(1, 0)) +
-  facet_wrap(vars(year))
+  facet_wrap(vars(label_year))
 
 d_year <- rain %>%
   filter(month %in% c(1:12), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
   summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
-  summarise(s_year = sum(sm), .by = year)
+  summarise(s_year = sum(sm), .by = year) %>% 
+  mutate(tot_mean = round(mean(s_year), 0))
 
-d_mean <- d_year %>% 
-  summarise(tot_mean = round(mean(s_year), 0))
-  
 rain %>%
   filter(month %in% c(1:12), elev < 1200, status == "official") %>%
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
@@ -244,21 +242,22 @@ rain %>%
            sm > ss + iqr * 0.5  ~ "2",
            sm <= ss + iqr * 0.5 ~ "3")) %>% 
   ungroup() %>%
+  group_by(year) %>% 
+  mutate(mean_year = sum(sm, na.rm = T), 
+         label_year = paste0(year, " - ", round(mean_year, 0), " (mm)")) %>% 
+  ungroup() %>% 
   ggplot(aes(month, sm)) +
   geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(sm, 0)), size = 4, vjust = -0.2) +
-  geom_text(data = d_year, 
-            aes(label = paste(round(s_year, 0), "(mm)"), x = 7, y = 200), 
-            size = 8, vjust = -0.2) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.7))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
   labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:", 
        title = paste0("Средно за периода (", first(d_year$year), "-", 
-                      last(d_year$year), " г.): ", d_mean$tot_mean, " (mm)")) +
+                      last(d_year$year), " г.): ", d_year$tot_mean, " (mm)")) +
   theme(text = element_text(size = 16), legend.position = "top", 
         plot.title = element_text(color = "blue", face = "bold"),
         legend.justification = c(1, 0)) +
-  facet_wrap(vars(year))
+  facet_wrap(vars(label_year))
 #=======================
 climagram("Пловдив")
 
