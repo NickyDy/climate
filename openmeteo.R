@@ -7,7 +7,7 @@ df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
 df <- weather_history(
-  location = "sofia",
+  location = "burgas",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
