@@ -134,7 +134,7 @@ rain %>%
   geom_text(aes(label = paste0(round(s, 0))), size = 5, vjust = -0.3) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
-  labs(x = NULL, y = "Средно месечно количество на валежите (mm)", 
+  labs(x = NULL, y = "Средно количество на валежите (mm)", 
        fill = "Легенда:", title = NULL) +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top",
@@ -153,9 +153,12 @@ temp %>%
     mean_temp >= 27 ~ "4", 
     .default = "3")) %>%
   ggplot(aes(day, mean_temp)) +
-  geom_col(aes(fill = col), show.legend = F) +
-  theme(text = element_text(size = 14)) +
-  scale_fill_manual(values = c("1" = "blue", "2" = "green", "3" = "orange", "4" = "red")) +
+  geom_col(aes(fill = col), show.legend = T) +
+  theme(text = element_text(size = 14), legend.position = "top") +
+  scale_fill_manual(values = c("1" = "blue", "2" = "green", "3" = "orange", "4" = "red"),
+                    labels = c("1" = "< 0 \u00B0C", "2" = "0-5 \u00B0C", "3" = "5-27 \u00B0C", "4" = "> 27 \u00B0C"),
+                    name = "Легенда: ") +
+  labs(x = "Ден", y = "Средна денонощна температура (\u00B0C)") +
   facet_wrap(vars(label_year), ncol = 3)
 
 rain %>% 
@@ -164,7 +167,7 @@ rain %>%
   summarise(mean_year = mean(sum_rain, na.rm = T), .by = c(year, month, day)) %>% 
   group_by(year) %>% 
   mutate(rain_year = sum(mean_year, na.rm = T), 
-         label_year = paste0(year, " - ", round(rain_year, 1), " (mm)")) %>% 
+         label_year = paste0(year, " - ", round(rain_year, 0), " (mm)")) %>% 
   ungroup() %>% 
   mutate(col = case_when(
     mean_year <= 5 ~ "1",
@@ -172,9 +175,12 @@ rain %>%
     mean_year >= 30 ~ "4", 
     .default = "3")) %>%
   ggplot(aes(day, mean_year)) +
-  geom_col(aes(fill = col), show.legend = F) +
-  theme(text = element_text(size = 14)) +
-  scale_fill_manual(values = c("4" = "blue", "3" = "#0096FF", "2" = "green", "1" = "orange")) +
+  geom_col(aes(fill = col), show.legend = T) +
+  theme(text = element_text(size = 14), legend.position = "top") +
+  scale_fill_manual(values = c("4" = "blue", "3" = "#0096FF", "2" = "green", "1" = "orange"),
+                    labels = c("1" = "< 5 (mm)", "2" = "5-15 (mm)", "3" = "15-30 (mm)", "4" = "> 30 (mm)"),
+                    name = "Легенда: ") +
+  labs(x = "Ден", y = "Средно количетсво на валежите (mm)") +
   facet_wrap(vars(label_year), ncol = 3)
 
 # rain %>%
@@ -251,7 +257,7 @@ rain %>%
   geom_text(aes(label = round(sm, 0)), size = 4, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
-  labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:", 
+  labs(x = "Месеци", y = "Средно количество на валежите (mm)", fill = "Легенда:", 
        title = paste0("Средно за периода (", first(d_year$year), "-", 
                       last(d_year$year), " г.): ", d_year$tot_mean, " (mm)")) +
   theme(text = element_text(size = 16), legend.position = "top", 
