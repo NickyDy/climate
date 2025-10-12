@@ -146,7 +146,7 @@ month_mean_temp <- temp %>%
   summarise(month_m = mean(m, na.rm = T))
   
 temp %>% 
-  filter(month == 10, elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   summarise(mean_temp = mean(temp, na.rm = T), .by = c(year, month, day)) %>%
   group_by(year) %>% 
   mutate(temp_year = mean(mean_temp, na.rm = T), 
@@ -175,7 +175,7 @@ month_mean_rain <- rain %>%
   summarise(month_m = mean(s))
   
 rain %>% 
-  filter(month == 10, elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   summarise(sum_rain = round(sum(rain, na.rm = T), 1), .by = c(station, year, month, day)) %>%
   summarise(mean_year = mean(sum_rain, na.rm = T), .by = c(year, month, day)) %>% 
   group_by(year) %>% 
@@ -323,7 +323,7 @@ rain %>%
                         "Пловдив", "Велико Търново", "Сливен", "Видин", "Русе",
                         "Търговище", "Разград", "Пазарджик", "Ловеч",
                         "Сандански", "вр. Мусала", "вр. Мургаш", "Стралджа",
-                        "Панагюрище", "Враца")) %>% 
+                        "Панагюрище", "Враца")) %>%
   summarise(sum_rain = sum(rain, na.rm = T), .by = c(station, year, month)) %>% 
   summarise(mean_rain = mean(sum_rain), .by = c(station, month)) %>%
   ggplot(aes(month, mean_rain)) +
@@ -342,6 +342,7 @@ rain %>%
   facet_wrap(vars(station), ncol = 5)
 
 temp %>%
+  filter(elev <= 1200, status == "official") %>% 
   summarise(mean_temp = mean(temp, na.rm = T), .by = c(month)) %>%
   ggplot(aes(month, mean_temp)) +
   geom_col(fill = "red") +
@@ -351,14 +352,26 @@ temp %>%
   theme(text = element_text(size = 16), 
         axis.text.y = element_blank(), 
         axis.ticks.y = element_blank())
+rain %>%
+  filter(elev <= 1200, status == "official") %>%
+  summarise(sum_rain = sum(rain, na.rm = T), .by = c(station, year, month)) %>% 
+  summarise(mean_rain = mean(sum_rain), .by = c(month)) %>%
+  ggplot(aes(month, mean_rain)) +
+  geom_col(fill = "blue") +
+  geom_text(aes(label = paste0(round(mean_rain, 0), " mm")), size = 6, vjust = -0.3) +
+  labs(x = "Месеци", y = "Средно месечно количество на валежите") +
+  theme_bw() +
+  theme(text = element_text(size = 20), 
+        axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank())
 #--------------------------------------
 mean_temp_month <- temp %>%
   drop_na(temp) %>% 
-  filter(month %in% c(4), elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp), 1),	n = n(), .by = year)
 temp %>%
   drop_na(temp) %>% 
-  filter(month %in% c(4), elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   mutate(m = mean(temp)) %>% 
   group_by(year) %>%
   mutate(col = mean(temp) > m) %>% 
@@ -370,7 +383,7 @@ temp %>%
   geom_hline(aes(yintercept = mean(temp)), 
              linewidth = 0.5, lty = 2, color = "black") +
   labs(x = NULL, y = "Средна месечна температура (\u00B0C)", 
-       fill = "Легенда:", title = "Месец: Април") +
+       fill = "Легенда:", title = "Месец: ") +
   theme(text = element_text(size = 16), legend.position = "top") +
   scale_fill_manual(values = c("#00BFC4", "#F8766D"), 
                     labels = c("По-хладно от средното", "По-топло от средното")) +
@@ -380,14 +393,14 @@ temp %>%
 
 mean_rain_month <- rain %>% 
   drop_na(rain) %>% 
-  filter(month %in% c(4), elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>% 
   summarise(m = round(mean(sum), 0), n = n(), .by = c(year, month))
 rain %>%
   drop_na(rain) %>% 
-  filter(month %in% c(4), elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   group_by(station, year, month) %>%
   mutate(sum = sum(rain)) %>%
   ungroup() %>%
@@ -403,7 +416,7 @@ rain %>%
   geom_hline(aes(yintercept = mean(sum)), 
              linewidth = 0.5, lty = 2, color = "black") +
   labs(x = NULL, y = "Месечно количество на валежите (mm)", 
-       fill = "Легенда:", title = "Месец: Април") +
+       fill = "Легенда:", title = "Месец: ") +
   theme(text = element_text(size = 16), legend.position = "top") +
   scale_fill_manual(values = c("#F8766D", "#00BFC4"), 
                     labels = c("По-сухо от средното", "По-дъждовно от средното")) +
