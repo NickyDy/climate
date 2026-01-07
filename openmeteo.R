@@ -7,7 +7,7 @@ df %>% map_dfr(~ sum(is.na(.)))
 glimpse(df)
 #---------------------
 df <- weather_history(
-  location = "sofia",
+  location = "yambol",
   start = "1940-01-01",
   end = Sys.Date(),
   daily = c("temperature_2m_min", "temperature_2m_mean",
@@ -76,7 +76,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "11", year == 2025) %>%
+  filter(month == "12", year == 2025) %>%
   pivot_longer(2:8) %>% 
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
