@@ -34,7 +34,7 @@ df <- weather_history(
            year %in% c(1990:1999) ~ "1990-те",
            year %in% c(2000:2009) ~ "2000-те",
            year %in% c(2010:2019) ~ "2010-те",
-           year %in% c(2020:2025) ~ "2020-те"))
+           year %in% c(2020:2029) ~ "2020-те"))
 
 df %>% 
   summarise(sum_rain = sum(prec_sum, na.rm = T), .by = c(year, month)) %>% 
@@ -76,8 +76,8 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "12", year == 2025) %>%
-  pivot_longer(2:8) %>% 
+  filter(month == "1", year == 2026) %>%
+  pivot_longer(2:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
                          name == "rain_sum" & value > 0 ~ "rain",
@@ -189,7 +189,7 @@ df %>%
   facet_wrap(vars(label_year))
 #----------------------------
 df %>% 
-  filter(month %in% c(11)) %>% 
+  filter(month %in% c(1)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -211,7 +211,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(11)) %>% 
+  filter(month %in% c(1)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
@@ -235,7 +235,7 @@ df %>%
 #-----------------------------------------------------------------------------------
 #DECADE
 df %>% 
-  filter(month %in% c(11)) %>% 
+  #filter(month %in% c(1)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(decade)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -243,7 +243,7 @@ df %>%
            m > mm + iqr * 1.2 ~ "1",
            m < mm - iqr * 0.5 ~ "4",
            m > mm + iqr * 0.5 ~ "2",
-           m <= mm + iqr * 0.5 ~ "3")) %>% 
+           m <= mm + iqr * 0.5 ~ "3")) %>%
   ggplot(aes(decade, m, fill = col)) +
   geom_hline(aes(yintercept = mm), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
@@ -256,22 +256,23 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 
 df %>% 
-  filter(month %in% c(11)) %>% 
-  summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(decade)) %>%
-  mutate(ss = round(mean(s, na.rm = T), 1), 
-         iqr = IQR(s), col = case_when(
-           s < ss - iqr ~ "5",
-           s > ss + iqr ~ "1",
-           s < ss - iqr * 0.5 ~ "4",
-           s > ss + iqr * 0.5 ~ "2",
-           s <= ss + iqr * 0.5 ~ "3")) %>% 
-  ggplot(aes(decade, s, fill = col)) +
+  #filter(month %in% c(1)) %>% 
+  summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(decade, year)) %>%
+  summarise(my = mean(s, na.rm = T), .by = c(decade)) %>% 
+  mutate(ss = round(mean(my, na.rm = T), 1), 
+         iqr = IQR(my), col = case_when(
+           my < ss - iqr ~ "5",
+           my > ss + iqr ~ "1",
+           my < ss - iqr * 0.5 ~ "4",
+           my > ss + iqr * 0.5 ~ "2",
+           my <= ss + iqr * 0.5 ~ "3")) %>%
+  ggplot(aes(decade, my, fill = col)) +
   geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
   geom_col() +
-  geom_text(aes(label = paste0(round(s, 0))), size = 5, vjust = -0.5) +
+  geom_text(aes(label = paste0(round(my, 0))), size = 5, vjust = -0.5) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 10) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
-  labs(x = NULL, y = "Месечно количество на валежите (mm)", fill = "Легенда:",
+  labs(x = NULL, y = "Средно месечно количество на валежите (mm)", fill = "Легенда:",
        title = NULL) +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top")
