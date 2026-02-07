@@ -1,6 +1,7 @@
 library(tidyverse)
 library(openmeteo)
 library(tidytext)
+library(nanoparquet)
 #library(rOstluft.plot)
 
 df %>% map_dfr(~ sum(is.na(.)))
@@ -35,6 +36,8 @@ df <- weather_history(
            year %in% c(2000:2009) ~ "2000-те",
            year %in% c(2010:2019) ~ "2010-те",
            year %in% c(2020:2029) ~ "2020-те"))
+
+# write_parquet(df, "climate/yambol.parquet")
 
 df %>% 
   summarise(sum_rain = sum(prec_sum, na.rm = T), .by = c(year, month)) %>% 
@@ -76,7 +79,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "1", year == 2026) %>%
+  filter(month == "2", year == 2026) %>%
   pivot_longer(2:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -189,7 +192,7 @@ df %>%
   facet_wrap(vars(label_year))
 #----------------------------
 df %>% 
-  filter(month %in% c(1)) %>% 
+  filter(month %in% c(2)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -211,7 +214,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(1)) %>% 
+  filter(month %in% c(2)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
