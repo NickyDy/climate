@@ -2,10 +2,20 @@ library(tidyverse)
 library(openmeteo)
 library(tidytext)
 library(nanoparquet)
-#library(rOstluft.plot)
+# library(fs)
+# 
+# files <- dir_ls("climate", regexp = "parquet")
+# df <- map(files, read_parquet) %>%
+#   set_names(basename) %>%
+#   list_rbind(names_to = "town") %>%
+#   mutate(town = str_remove(town, ".parquet$"), time = ymd(time)) %>%
+#   relocate(time, .after = decade) %>% 
+#   select(-date)
+# 
+# glimpse(df)
+# df %>% count(town)
 
-df %>% map_dfr(~ sum(is.na(.)))
-glimpse(df)
+df <- read_parquet("climate/berlin.parquet")
 #---------------------
 df <- weather_history(
   location = "yambol",
@@ -37,7 +47,7 @@ df <- weather_history(
            year %in% c(2010:2019) ~ "2010-те",
            year %in% c(2020:2029) ~ "2020-те"))
 
-# write_parquet(df, "climate/yambol.parquet")
+#write_parquet(df, "climate/bangkok.parquet")
 
 df %>% 
   summarise(sum_rain = sum(prec_sum, na.rm = T), .by = c(year, month)) %>% 
