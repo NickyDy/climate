@@ -12,7 +12,12 @@ df <- map(files, read_parquet) %>%
   relocate(time, .after = decade) %>%
   select(-date)
 
-coord <- tibble(city = "Cape Town") %>% 
+df <- df %>% filter(town %in% c("blagoevgrad", "burgas", "kurdzhali", "montana", "pleven",
+                                "ruse", "shumen", "smolyan", "sofia", "varna", "vidin", "yambol"))
+
+df %>% count(town) %>% print(n = Inf)
+
+coord <- tibble(city = "Caracas") %>% 
   geocode(city, method = "osm")
 
 json <- fromJSON(glue::glue("https://archive-api.open-meteo.com/v1/archive?latitude={coord$lat}&longitude={coord$long}&start_date=1940-01-01&end_date={Sys.Date()}&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto"))
@@ -40,14 +45,14 @@ df <- json[["daily"]] %>% as_tibble() %>%
            year %in% c(2010:2019) ~ "2010-те",
            year %in% c(2020:2029) ~ "2020-те"))
 
-write_parquet(df, "climate/cape_town.parquet")
+write_parquet(df, "climate/caracas.parquet")
 
 colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
 colors_rain <- c("1" = "blue" , "2" = "#0096FF" , "3" = "green", "4" = "orange", "5" = "red")
 labels_rain <- c("1" = "Много дъждовно", "2" = "Дъждовно", "3" = "Умерено", "4" = "Сухо", "5" = "Много сухо")
 
-city <- "basra"
+#city <- "yambol"
 
 t_year <- df %>%
   filter(month %in% c(1:12), 
@@ -130,7 +135,7 @@ df %>%
 
 #DECADE
 df %>% 
-  #filter(month %in% c(1)) %>% 
+  #filter(town %in% c("manaus")) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(decade)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -151,7 +156,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 
 df %>% 
-  #filter(month %in% c(1)) %>% 
+  #filter(town %in% c("manaus")) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(decade, year)) %>%
   summarise(my = mean(s, na.rm = T), .by = c(decade)) %>% 
   mutate(ss = round(mean(my, na.rm = T), 1), 
@@ -171,3 +176,28 @@ df %>%
        title = NULL) +
   guides(fill = guide_legend(nrow = 1)) +
   theme(text = element_text(size = 16), legend.position = "top")
+#---------------------------------------------------------------
+df %>% 
+  summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(decade, town, year)) %>%
+  summarise(my = mean(s, na.rm = T), .by = c(decade, town)) %>%
+  group_by(town) %>% 
+  mutate(ss = round(mean(my, na.rm = T), 1), 
+         iqr = IQR(my), col = case_when(
+           my < ss - iqr ~ "5",
+           my > ss + iqr ~ "1",
+           my < ss - iqr * 0.5 ~ "4",
+           my > ss + iqr * 0.5 ~ "2",
+           my <= ss + iqr * 0.5 ~ "3")) %>%
+  ungroup() %>% 
+  ggplot(aes(decade, my, fill = col)) +
+  geom_hline(aes(yintercept = ss), linewidth = 0.5, lty = 2, color = "black") +
+  geom_col() +
+  geom_text(aes(label = paste0(round(my, 0))), size = 5, vjust = -0.5) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.7)), n.breaks = 3) +
+  scale_fill_manual(values = colors_rain, labels = labels_rain) +
+  labs(x = NULL, y = "Средно месечно количество на валежите (mm)", fill = "Легенда:",
+       title = NULL) +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme(text = element_text(size = 14), legend.position = "top", 
+        axis.text.x = element_text(size = 10)) +
+  facet_wrap(vars(town), ncol = 4)
