@@ -100,7 +100,7 @@ colors_rain <- c("1" = "blue" , "2" = "#0096FF" , "3" = "green",
 labels_rain <- c("1" = "Много дъждовно", "2" = "Дъждовно", "3" = "Умерено", 
                  "4" = "Сухо", "5" = "Много сухо")
 
-temp %>% 
+temp %>%
   filter(month %in% c(2), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(

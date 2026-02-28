@@ -13,7 +13,8 @@ df <- map(files, read_parquet) %>%
   select(-date)
 
 df <- df %>% filter(town %in% c("blagoevgrad", "burgas", "kurdzhali", "montana", "pleven",
-                                "ruse", "shumen", "smolyan", "sofia", "varna", "vidin", "yambol"))
+                                "ruse", "shumen", "smolyan", "sofia", "varna", "vidin", "yambol",
+                                "kyustendil", "pazardzhik", "haskovo"))
 
 df %>% count(town) %>% print(n = Inf)
 

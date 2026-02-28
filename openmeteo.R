@@ -3,7 +3,7 @@ library(openmeteo)
 library(tidytext)
 library(nanoparquet)
 #---------------------
-location <- "montana"
+location <- "yambol"
 
 df <- weather_history(
   location = location,
@@ -185,7 +185,7 @@ df %>%
        title = paste0("Средно за периода (", first(d_year$year), "-", 
                       last(d_year$year), " г.): ", d_year$tot_mean, " (mm)")) +
   theme(text = element_text(size = 14), legend.position = "top",
-        plot.title = element_text(color = "red", face = "bold"),
+        plot.title = element_text(color = "blue", face = "bold"),
         legend.justification = c(1, 0)) +
   facet_wrap(vars(label_year))
 #----------------------------
