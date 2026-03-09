@@ -8,9 +8,8 @@ files <- dir_ls("climate", regexp = "parquet")
 df <- map(files, read_parquet) %>%
   set_names(basename) %>%
   list_rbind(names_to = "town") %>%
-  mutate(town = str_remove(town, ".parquet$"), time = ymd(time)) %>%
-  relocate(time, .after = decade) %>%
-  select(-date)
+  mutate(town = str_remove(town, ".parquet$")) %>%
+  select(-time)
 
 df <- df %>% filter(town %in% c("blagoevgrad", "burgas", "kurdzhali", "montana", "pleven",
                                 "ruse", "shumen", "smolyan", "sofia", "varna", "vidin", "yambol",
@@ -18,7 +17,7 @@ df <- df %>% filter(town %in% c("blagoevgrad", "burgas", "kurdzhali", "montana",
 
 df %>% count(town) %>% print(n = Inf)
 
-coord <- tibble(city = "Caracas") %>% 
+coord <- tibble(city = "singapore") %>% 
   geocode(city, method = "osm")
 
 json <- fromJSON(glue::glue("https://archive-api.open-meteo.com/v1/archive?latitude={coord$lat}&longitude={coord$long}&start_date=1940-01-01&end_date={Sys.Date()}&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,snowfall_sum,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto"))
@@ -53,11 +52,11 @@ labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Ум
 colors_rain <- c("1" = "blue" , "2" = "#0096FF" , "3" = "green", "4" = "orange", "5" = "red")
 labels_rain <- c("1" = "Много дъждовно", "2" = "Дъждовно", "3" = "Умерено", "4" = "Сухо", "5" = "Много сухо")
 
-#city <- "yambol"
+city <- "yambol"
 
 t_year <- df %>%
   filter(month %in% c(1:12), 
-         #town == city
+         town == city
   ) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(mean_year = mean(m), .by = year) %>% 
@@ -65,7 +64,7 @@ t_year <- df %>%
 
 df %>% 
   filter(month %in% c(1:12), 
-         #town == city
+         town == city
   ) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
@@ -97,7 +96,7 @@ df %>%
 
 d_year <- df %>% 
   filter(month %in% c(1:12), 
-         #town == city
+         town == city
   ) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   summarise(s_year = sum(s), .by = year) %>% 
@@ -105,7 +104,7 @@ d_year <- df %>%
 
 df %>% 
   filter(month %in% c(1:12), 
-         #town == city
+         town == city
   ) %>%
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year, month)) %>%
   group_by(month) %>% 
