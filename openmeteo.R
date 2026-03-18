@@ -3,7 +3,7 @@ library(nanoparquet)
 library(openmeteo)
 library(tidytext)
 #---------------------
-location <- "ashgabat"
+location <- "manila"
 
 df <- weather_history(
   location = location,
@@ -49,7 +49,7 @@ df <- map(files, read_parquet) %>%
 
 df %>% count(town) %>% print(n = Inf)
 
-triplot("tashkent")
+triplot("yambol")
 
 triplot <- function(city) {
   
