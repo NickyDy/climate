@@ -3,7 +3,57 @@ library(nanoparquet)
 library(openmeteo)
 library(tidytext)
 #---------------------
-location <- "kampala"
+location <- "yambol"
+
+wf <- weather_forecast(
+  model = "ecmwf_ifs",
+  location = location,
+  start = Sys.Date(),
+  end = Sys.Date() + 9,
+  daily = c("temperature_2m_min", "temperature_2m_mean", 
+            "temperature_2m_max", "rain_sum", "snowfall_sum",
+            "windspeed_10m_max", "wind_direction_10m_dominant", 
+            "cloud_cover_mean"),
+  response_units = list(
+    temperature_unit = "celsius",
+    precipitation_unit = "mm",
+    windspeed_unit = "ms"))
+
+wf %>% 
+  #select(-daily_wind_direction_10m_dominant) %>% 
+  pivot_longer(c(-date)) %>%
+  mutate(wind_dir = value) %>% 
+  mutate(wind_dir = case_when(
+    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 45, 135) ~ "E",
+    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 135, 225) ~ "S",
+    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 225, 315) ~ "W",
+    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 315, 360) ~ "N",
+    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 0, 45) ~ "N", .default = "")) %>% 
+  mutate(unit = case_when(
+    name == "daily_rain_sum" ~ "mm",
+    name == "daily_snowfall_sum" ~ "cm",
+    name == "daily_windspeed_10m_max" ~ "m/s",
+    name == "daily_cloud_cover_mean" ~ "%",
+    name == "daily_wind_direction_10m_dominant" ~ "",
+    .default = "\u00B0C")) %>%
+  mutate(name = fct_recode(name, "Минимална температура" = "daily_temperature_2m_min",
+                           "Средна температура" = "daily_temperature_2m_mean",
+                           "Максимална температура" = "daily_temperature_2m_max",
+                           "Сума на валежите" = "daily_rain_sum",
+                           "Височина на снежната покривка" = "daily_snowfall_sum",
+                           "Посока на вятъра" = "daily_wind_direction_10m_dominant",
+                           "Скорост на вятъра" = "daily_windspeed_10m_max",
+                           "Средна облачност" = "daily_cloud_cover_mean"),
+         value = round(value, 1)) %>% 
+  ggplot(aes(date, value, fill = name)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = paste0(value, " ", unit, wind_dir)), size = 5, vjust = -0.3) +
+  scale_fill_manual(values = c("#0096FF", "blue", "#00FFFF", "red", "orange", "yellow", "darkgreen", "green")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.4))) +
+  scale_x_date(date_breaks = "1 day", date_labels = "%b-%d-%a") +
+  theme(text = element_text(size = 16)) +
+  labs(x = "Дата", y = "Стойност") +
+  facet_wrap(vars(name), ncol = 1, scale = "free_y")
 
 df <- weather_history(
   location = location,
@@ -49,7 +99,7 @@ df <- map(files, read_parquet) %>%
 
 df %>% count(town) %>% print(n = Inf)
 
-triplot("kampala")
+triplot("sofia")
 
 triplot <- function(city) {
   
@@ -295,7 +345,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 df %>% 
-  filter(month %in% c(3)) %>% 
+  filter(month %in% c(4)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -317,7 +367,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(3)) %>% 
+  filter(month %in% c(4)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
