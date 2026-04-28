@@ -1,49 +1,60 @@
 library(tidyverse)
 library(nanoparquet)
-library(openmeteo)
+library(httr2)
+library(tidygeocoder)
 library(tidytext)
 #---------------------
-location <- "yambol"
+coord <- tibble(city = "yambol") %>% 
+  geocode(city, method = "osm")
 
-wf <- weather_forecast(
-  model = "ecmwf_ifs",
-  location = location,
-  start = Sys.Date(),
-  end = Sys.Date() + 9,
-  daily = c("temperature_2m_min", "temperature_2m_mean", 
-            "temperature_2m_max", "rain_sum", "snowfall_sum",
-            "windspeed_10m_max", "wind_direction_10m_dominant", 
-            "cloud_cover_mean"),
-  response_units = list(
-    temperature_unit = "celsius",
-    precipitation_unit = "mm",
-    windspeed_unit = "ms"))
+wf <- request("https://api.open-meteo.com/v1/forecast") %>% 
+  req_url_query(
+    latitude = coord$lat,
+    longitude = coord$long,
+    daily = paste(
+      c("temperature_2m_mean",
+        "temperature_2m_max",
+        "temperature_2m_min",
+        "rain_sum",
+        "snowfall_sum",
+        "wind_speed_10m_max",
+        "wind_direction_10m_dominant",
+        "cloud_cover_mean"),
+      collapse = ","),
+    timezone = "auto",
+    wind_speed_unit = "ms",
+    forecast_days = "10") %>% 
+  req_perform() %>% 
+  resp_body_json(., simplifyVector = T) %>% 
+  pluck("daily") %>% as_tibble() %>% 
+  mutate(date = ymd(time)) %>% 
+  select(-time)
 
 wf %>% 
   #select(-daily_wind_direction_10m_dominant) %>% 
   pivot_longer(c(-date)) %>%
   mutate(wind_dir = value) %>% 
   mutate(wind_dir = case_when(
-    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 45, 135) ~ "E",
-    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 135, 225) ~ "S",
-    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 225, 315) ~ "W",
-    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 315, 360) ~ "N",
-    name %in% c("daily_wind_direction_10m_dominant") & between(wind_dir, 0, 45) ~ "N", .default = "")) %>% 
+    name %in% c("wind_direction_10m_dominant") & between(wind_dir, 45, 135) ~ "E",
+    name %in% c("wind_direction_10m_dominant") & between(wind_dir, 135, 225) ~ "S",
+    name %in% c("wind_direction_10m_dominant") & between(wind_dir, 225, 315) ~ "W",
+    name %in% c("wind_direction_10m_dominant") & between(wind_dir, 315, 360) ~ "N",
+    name %in% c("wind_direction_10m_dominant") & between(wind_dir, 0, 45) ~ "N", .default = "")) %>% 
   mutate(unit = case_when(
-    name == "daily_rain_sum" ~ "mm",
-    name == "daily_snowfall_sum" ~ "cm",
-    name == "daily_windspeed_10m_max" ~ "m/s",
-    name == "daily_cloud_cover_mean" ~ "%",
-    name == "daily_wind_direction_10m_dominant" ~ "",
+    name == "rain_sum" ~ "mm",
+    name == "snowfall_sum" ~ "cm",
+    name == "windspeed_10m_max" ~ "m/s",
+    name == "cloud_cover_mean" ~ "%",
+    name == "wind_direction_10m_dominant" ~ "",
     .default = "\u00B0C")) %>%
-  mutate(name = fct_recode(name, "Минимална температура" = "daily_temperature_2m_min",
-                           "Средна температура" = "daily_temperature_2m_mean",
-                           "Максимална температура" = "daily_temperature_2m_max",
-                           "Сума на валежите" = "daily_rain_sum",
-                           "Височина на снежната покривка" = "daily_snowfall_sum",
-                           "Посока на вятъра" = "daily_wind_direction_10m_dominant",
-                           "Скорост на вятъра" = "daily_windspeed_10m_max",
-                           "Средна облачност" = "daily_cloud_cover_mean"),
+  mutate(name = fct_recode(name, "Минимална температура" = "temperature_2m_min",
+                           "Средна температура" = "temperature_2m_mean",
+                           "Максимална температура" = "temperature_2m_max",
+                           "Сума на валежите" = "rain_sum",
+                           "Височина на снежната покривка" = "snowfall_sum",
+                           "Посока на вятъра" = "wind_direction_10m_dominant",
+                           "Скорост на вятъра" = "wind_speed_10m_max",
+                           "Средна облачност" = "cloud_cover_mean"),
          value = round(value, 1)) %>% 
   ggplot(aes(date, value, fill = name)) +
   geom_col(show.legend = F) +
@@ -55,22 +66,33 @@ wf %>%
   labs(x = "Дата", y = "Стойност") +
   facet_wrap(vars(name), ncol = 1, scale = "free_y")
 
-df <- weather_history(
-  location = location,
-  start = "1940-01-01",
-  end = Sys.Date(),
-  daily = c("temperature_2m_min", "temperature_2m_mean",
-            "temperature_2m_max", "rain_sum",
-            "snowfall_sum", "precipitation_sum", 
-            "windspeed_10m_max", "winddirection_10m_dominant")) %>% 
-  rename("temp_min" = "daily_temperature_2m_min", 
-         "temp_mean" = "daily_temperature_2m_mean",
-         "temp_max" = "daily_temperature_2m_max", 
-         "rain_sum" = "daily_rain_sum",
-         "snow_sum" = "daily_snowfall_sum", 
-         "prec_sum" = "daily_precipitation_sum", 
-         "wind_max" = "daily_windspeed_10m_max",
-         "wind_dir" = "daily_winddirection_10m_dominant") %>% 
+df <- request("https://archive-api.open-meteo.com/v1/archive") %>% 
+  req_url_query(
+    start_date = "1940-01-01",
+    end_date = Sys.Date(),
+    latitude = coord$lat,
+    longitude = coord$long,
+    daily = paste(
+      c("temperature_2m_min", "temperature_2m_mean",
+        "temperature_2m_max", "rain_sum",
+        "snowfall_sum", "precipitation_sum", 
+        "wind_speed_10m_max", "wind_direction_10m_dominant"),
+      collapse = ","),
+    timezone = "auto",
+    wind_speed_unit = "ms") %>% 
+  req_perform() %>% 
+  resp_body_json(., simplifyVector = T) %>% 
+  pluck("daily") %>% as_tibble() %>% 
+  mutate(date = ymd(time)) %>% 
+  select(-time) %>% 
+  rename("temp_min" = "temperature_2m_min", 
+         "temp_mean" = "temperature_2m_mean",
+         "temp_max" = "temperature_2m_max", 
+         "rain_sum" = "rain_sum",
+         "snow_sum" = "snowfall_sum", 
+         "prec_sum" = "precipitation_sum", 
+         "wind_max" = "wind_speed_10m_max",
+         "wind_dir" = "wind_direction_10m_dominant") %>% 
   mutate(year = factor(year(date)),
          month = factor(month(date)),
          day = factor(day(date)),
@@ -85,7 +107,7 @@ df <- weather_history(
            year %in% c(2010:2019) ~ "2010-те",
            year %in% c(2020:2029) ~ "2020-те"))
 
-write_parquet(df, glue::glue("climate/{location}.parquet"))
+write_parquet(df, glue::glue("climate/{coord$city}.parquet"))
 
 library(fs)
 library(patchwork)
@@ -188,7 +210,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "3", year == 2026) %>%
+  filter(month == "4", year == 2026) %>%
   pivot_longer(2:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
