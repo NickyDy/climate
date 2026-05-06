@@ -4,7 +4,7 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 #---------------------
-coord <- tibble(city = "yambol") %>% 
+coord <- tibble(city = "stockholm") %>% 
   geocode(city, method = "osm")
 
 wf <- request("https://api.open-meteo.com/v1/forecast") %>% 
@@ -23,7 +23,8 @@ wf <- request("https://api.open-meteo.com/v1/forecast") %>%
       collapse = ","),
     timezone = "auto",
     wind_speed_unit = "ms",
-    forecast_days = "10") %>% 
+    forecast_days = "14",
+    models = "ecmwf_ifs") %>% 
   req_perform() %>% 
   resp_body_json(., simplifyVector = T) %>% 
   pluck("daily") %>% as_tibble() %>% 
@@ -61,7 +62,7 @@ wf %>%
   geom_text(aes(label = paste0(value, " ", unit, wind_dir)), size = 5, vjust = -0.3) +
   scale_fill_manual(values = c("#0096FF", "blue", "#00FFFF", "red", "orange", "yellow", "darkgreen", "green")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.4))) +
-  scale_x_date(date_breaks = "1 day", date_labels = "%b-%d-%a") +
+  scale_x_date(date_breaks = "4 days", date_labels = "%b-%d-%a") +
   theme(text = element_text(size = 16)) +
   labs(x = "Дата", y = "Стойност") +
   facet_wrap(vars(name), ncol = 1, scale = "free_y")
@@ -210,8 +211,8 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month == "4", year == 2026) %>%
-  pivot_longer(2:8) %>%
+  filter(month %in% c("5"), year == 2026) %>%
+  pivot_longer(1:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
                          name == "rain_sum" & value > 0 ~ "rain",
