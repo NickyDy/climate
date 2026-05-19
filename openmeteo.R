@@ -4,7 +4,7 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 #---------------------
-coord <- tibble(city = "stockholm") %>% 
+coord <- tibble(city = "yambol") %>% 
   geocode(city, method = "osm")
 
 wf <- request("https://api.open-meteo.com/v1/forecast") %>% 
@@ -368,7 +368,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 df %>% 
-  filter(month %in% c(4)) %>% 
+  filter(month %in% c(5)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
