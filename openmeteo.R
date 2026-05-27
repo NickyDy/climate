@@ -4,8 +4,10 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 #---------------------
-coord <- tibble(city = "yambol") %>% 
+coord <- tibble(city = "london") %>% 
   geocode(city, method = "osm")
+
+df <- read_parquet("climate/london.parquet")
 
 wf <- request("https://api.open-meteo.com/v1/forecast") %>% 
   req_url_query(
@@ -56,7 +58,7 @@ wf %>%
                            "Посока на вятъра" = "wind_direction_10m_dominant",
                            "Скорост на вятъра" = "wind_speed_10m_max",
                            "Средна облачност" = "cloud_cover_mean"),
-         value = round(value, 1)) %>% 
+         value = round(value, 0)) %>% 
   ggplot(aes(date, value, fill = name)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = paste0(value, " ", unit, wind_dir)), size = 5, vjust = -0.3) +
@@ -110,6 +112,59 @@ df <- request("https://archive-api.open-meteo.com/v1/archive") %>%
 
 write_parquet(df, glue::glue("climate/{coord$city}.parquet"))
 
+df %>% 
+  summarise(snow = sum(snow_sum, na.rm = T), .by = c(year, month)) %>% 
+  filter(snow > 0) %>% 
+  mutate(month = reorder_within(month, snow, year),
+         col = if_else(snow > 40, "1", "2")) %>%
+  ggplot(aes(snow, month, fill = col)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = round(snow, 0)), size = 4, hjust = -0.2) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.4))) +
+  scale_y_reordered() +
+  scale_fill_manual(values = c("blue", "#00BFC4")) +
+  labs(x = "Количество натрупан сняг (cm)", y = "Месец") +
+  facet_wrap(vars(year), scales = "free_y", ncol = 15)
+
+df %>% 
+  drop_na() %>% 
+  #filter(year %in% c(1945), location == "Ямбол") %>%
+  filter(month %in% c("5"), year == 2026) %>%
+  pivot_longer(1:8) %>%
+  mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
+                         name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
+                         name == "rain_sum" & value > 0 ~ "rain",
+                         name == "snow_sum" & value > 0 ~ "snow",
+                         name == "wind_max" & value > 30 ~ "windy",
+                         name == "wind_max" & value < 30 ~ "notwindy",
+                         .default = "normal")) %>%
+  mutate(name = fct_recode(name, 
+                           "Максимална температура (\u00B0C)" = "temp_max",
+                           "Средна температура (\u00B0C)" = "temp_mean",
+                           "Минимална температура (\u00B0C)" = "temp_min",
+                           "Дъжд (mm)" = "rain_sum",
+                           "Сняг (cm)" = "snow_sum",
+                           "Максимална скорост на вятъра (km/h)" = "wind_max"),
+         name = fct_relevel(name,
+                            "Максимална температура (\u00B0C)",
+                            "Средна температура (\u00B0C)",
+                            "Минимална температура (\u00B0C)",
+                            "Дъжд (mm)",
+                            "Сняг (cm)",
+                            "Максимална скорост на вятъра (km/h)")) %>%
+  filter(!name %in% c("prec_sum", "wind_dir")) %>%
+  ggplot(aes(day, value, fill = col)) +
+  geom_col(show.legend = F) +
+  geom_text(aes(label = round(value, 1)), size = 4, vjust = -0.2) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3)), n.breaks = 4) +
+  scale_fill_manual(values = c("hot" = "red", "normal" = "orange", 
+                               "cold" = "lightblue", "rain" = "blue",
+                               "windy" = "green", "snow" = "#00FFFF", "notwindy" = "darkgreen")) +
+  #geom_hline(data = m_mont, aes(yintercept = m), linewidth = 0.5, lty = 2, color = "black") +
+  labs(x = "Дни", y = NULL) + 
+  theme(text = element_text(size = 16)) +
+  facet_wrap(vars(name), ncol = 1, dir = "v")
+
 library(fs)
 library(patchwork)
 
@@ -122,7 +177,7 @@ df <- map(files, read_parquet) %>%
 
 df %>% count(town) %>% print(n = Inf)
 
-triplot("sofia")
+triplot("df")
 
 triplot <- function(city) {
   
@@ -194,58 +249,6 @@ t/r/s
 
 }
 
-df %>% 
-  summarise(snow = sum(snow_sum, na.rm = T), .by = c(year, month)) %>% 
-  filter(snow > 0) %>% 
-  mutate(month = reorder_within(month, snow, year),
-         col = if_else(snow > 40, "1", "2")) %>%
-  ggplot(aes(snow, month, fill = col)) +
-  geom_col(show.legend = F) +
-  geom_text(aes(label = round(snow, 0)), size = 4, hjust = -0.2) +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.4))) +
-  scale_y_reordered() +
-  scale_fill_manual(values = c("blue", "#00BFC4")) +
-  labs(x = "Количество натрупан сняг (cm)", y = "Месец") +
-  facet_wrap(vars(year), scales = "free_y", ncol = 15)
-
-df %>% 
-  drop_na() %>% 
-  #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month %in% c("5"), year == 2026) %>%
-  pivot_longer(1:8) %>%
-  mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
-                         name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
-                         name == "rain_sum" & value > 0 ~ "rain",
-                         name == "snow_sum" & value > 0 ~ "snow",
-                         name == "wind_max" & value > 30 ~ "windy",
-                         name == "wind_max" & value < 30 ~ "notwindy",
-                         .default = "normal")) %>%
-  mutate(name = fct_recode(name, 
-           "Максимална температура (\u00B0C)" = "temp_max",
-           "Средна температура (\u00B0C)" = "temp_mean",
-           "Минимална температура (\u00B0C)" = "temp_min",
-           "Дъжд (mm)" = "rain_sum",
-           "Сняг (cm)" = "snow_sum",
-           "Максимална скорост на вятъра (km/h)" = "wind_max"),
-         name = fct_relevel(name,
-           "Максимална температура (\u00B0C)",
-           "Средна температура (\u00B0C)",
-           "Минимална температура (\u00B0C)",
-           "Дъжд (mm)",
-           "Сняг (cm)",
-           "Максимална скорост на вятъра (km/h)")) %>%
-  filter(!name %in% c("prec_sum", "wind_dir")) %>%
-  ggplot(aes(day, value, fill = col)) +
-  geom_col(show.legend = F) +
-  geom_text(aes(label = round(value, 1)), size = 4, vjust = -0.2) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.3)), n.breaks = 4) +
-  scale_fill_manual(values = c("hot" = "red", "normal" = "orange", 
-                               "cold" = "lightblue", "rain" = "blue",
-                               "windy" = "green", "snow" = "#00FFFF", "notwindy" = "darkgreen")) +
-  #geom_hline(data = m_mont, aes(yintercept = m), linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Дни", y = NULL) + 
-  theme(text = element_text(size = 16)) +
-  facet_wrap(vars(name), ncol = 1, dir = "v")
 #--------------------------------------------
 colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
@@ -390,7 +393,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(4)) %>% 
+  filter(month %in% c(5)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(

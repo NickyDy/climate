@@ -124,7 +124,7 @@ temp %>%
         legend.justification = c(1, 0))
 rain %>% 
   filter(month %in% c(5), elev < 1200, status == "official") %>% 
-  summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year, month)) %>%
+  summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
     s > ss + iqr ~ "1",
