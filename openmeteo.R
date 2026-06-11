@@ -4,10 +4,10 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 #---------------------
-coord <- tibble(city = "london") %>% 
+coord <- tibble(city = "yambol") %>% 
   geocode(city, method = "osm")
 
-df <- read_parquet("climate/london.parquet")
+df <- read_parquet("climate/yambol.parquet")
 
 wf <- request("https://api.open-meteo.com/v1/forecast") %>% 
   req_url_query(
@@ -177,7 +177,7 @@ df <- map(files, read_parquet) %>%
 
 df %>% count(town) %>% print(n = Inf)
 
-triplot("df")
+triplot("kigali")
 
 triplot <- function(city) {
   
@@ -248,7 +248,6 @@ s <- df %>%
 t/r/s
 
 }
-
 #--------------------------------------------
 colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
