@@ -46,7 +46,7 @@ wf %>%
   mutate(unit = case_when(
     name == "rain_sum" ~ "mm",
     name == "snowfall_sum" ~ "cm",
-    name == "windspeed_10m_max" ~ "m/s",
+    name == "wind_speed_10m_max" ~ "m/s",
     name == "cloud_cover_mean" ~ "%",
     name == "wind_direction_10m_dominant" ~ "",
     .default = "\u00B0C")) %>%
@@ -129,7 +129,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month %in% c("5"), year == 2026) %>%
+  filter(month %in% c("7"), year == 2026) %>%
   pivot_longer(1:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -144,26 +144,27 @@ df %>%
                            "Минимална температура (\u00B0C)" = "temp_min",
                            "Дъжд (mm)" = "rain_sum",
                            "Сняг (cm)" = "snow_sum",
-                           "Максимална скорост на вятъра (km/h)" = "wind_max"),
+                           "Максимална скорост на вятъра (m/s)" = "wind_max"),
          name = fct_relevel(name,
                             "Максимална температура (\u00B0C)",
                             "Средна температура (\u00B0C)",
                             "Минимална температура (\u00B0C)",
                             "Дъжд (mm)",
                             "Сняг (cm)",
-                            "Максимална скорост на вятъра (km/h)")) %>%
+                            "Максимална скорост на вятъра (m/s)")) %>%
   filter(!name %in% c("prec_sum", "wind_dir")) %>%
-  ggplot(aes(day, value, fill = col)) +
+  ggplot(aes(date, value, fill = col)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = round(value, 1)), size = 4, vjust = -0.2) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.3)), n.breaks = 4) +
+  scale_x_date(breaks = "5 days", date_labels = c("%b-%d")) +
   scale_fill_manual(values = c("hot" = "red", "normal" = "orange", 
                                "cold" = "lightblue", "rain" = "blue",
                                "windy" = "green", "snow" = "#00FFFF", "notwindy" = "darkgreen")) +
   #geom_hline(data = m_mont, aes(yintercept = m), linewidth = 0.5, lty = 2, color = "black") +
-  labs(x = "Дни", y = NULL) + 
+  labs(x = "Дата", y = NULL) + 
   theme(text = element_text(size = 16)) +
-  facet_wrap(vars(name), ncol = 1, dir = "v")
+  facet_wrap(vars(name), ncol = 1, dir = "v", scale = "free_y")
 
 library(fs)
 library(patchwork)
@@ -177,7 +178,7 @@ df <- map(files, read_parquet) %>%
 
 df %>% count(town) %>% print(n = Inf)
 
-triplot("kigali")
+triplot("washington")
 
 triplot <- function(city) {
   
@@ -370,7 +371,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 df %>% 
-  filter(month %in% c(5)) %>% 
+  filter(month %in% c(6)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -392,7 +393,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(5)) %>% 
+  filter(month %in% c(6)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
