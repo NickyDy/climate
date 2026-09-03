@@ -7,7 +7,15 @@ library(tidytext)
 coord <- tibble(city = "yambol") %>% 
   geocode(city, method = "osm")
 
-df <- read_parquet("climate/yambol.parquet")
+df <- read_parquet("climate/sofia.parquet")
+
+df %>% 
+  filter(rain_sum > 30) %>% 
+    ggplot(aes(date, rain_sum)) +
+    geom_point() +
+    geom_smooth(se = F, method = "loess") +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # df %>%
 #   filter(temp_min > 20) %>%
@@ -440,7 +448,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 df %>% 
-  filter(month %in% c(6)) %>% 
+  filter(month %in% c(8)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -462,7 +470,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(6)) %>% 
+  filter(month %in% c(8)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
