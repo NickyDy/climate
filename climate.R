@@ -4,7 +4,7 @@ library(rvest)
 
 rain <- read_parquet("shiny/climate/rain.parquet")
 temp <- read_parquet("shiny/climate/temp.parquet")
-#-------------------------------------------
+#-------------------------------------------------
 rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   html_element("table") %>% 
   html_table() %>%
