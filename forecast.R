@@ -4,7 +4,7 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 
-coord <- tibble(city = "sofia") %>% 
+coord <- tibble(city = "yambol", state = "bulgaria") %>% 
   geocode(city, method = "osm")
 
 wf <- request("https://api.open-meteo.com/v1/forecast") %>% 
@@ -19,7 +19,8 @@ wf <- request("https://api.open-meteo.com/v1/forecast") %>%
         "snowfall_sum",
         "wind_speed_10m_max",
         "wind_direction_10m_dominant",
-        "cloud_cover_mean"),
+        "cloud_cover_mean",
+        "visibility_min"),
       collapse = ","),
     timezone = "auto",
     wind_speed_unit = "ms",
@@ -41,7 +42,8 @@ wf_h <- request("https://api.open-meteo.com/v1/forecast") %>%
         "precipitation_probability",
         "wind_speed_10m",
         "wind_direction_10m",
-        "cloud_cover"),
+        "cloud_cover",
+        "visibility"),
       collapse = ","),
     timezone = "auto",
     wind_speed_unit = "ms",
@@ -107,12 +109,14 @@ wf %>%
     name == "wind_speed_10m_max" ~ "m/s",
     name == "cloud_cover_mean" ~ "%",
     name == "wind_direction_10m_dominant" ~ "",
+    name == "visibility_min" ~ "m",
     .default = "\u00B0C")) %>%
   mutate(name = fct_recode(name, "Минимална температура" = "temperature_2m_min",
                            "Средна температура" = "temperature_2m_mean",
                            "Максимална температура" = "temperature_2m_max",
                            "Сума на валежите" = "rain_sum",
                            "Височина на снежната покривка" = "snowfall_sum",
+                           "Минимална видимост" = "visibility_min",
                            "Посока на вятъра" = "wind_direction_10m_dominant",
                            "Скорост на вятъра" = "wind_speed_10m_max",
                            "Средна облачност" = "cloud_cover_mean"),
@@ -120,7 +124,7 @@ wf %>%
   ggplot(aes(date, value, fill = name)) +
   geom_col(show.legend = F) +
   geom_text(aes(label = paste0(value, " ", unit, wind_dir)), size = 5, vjust = -0.3) +
-  scale_fill_manual(values = c("#0096FF", "blue", "#00FFFF", "red", "orange", "yellow", "darkgreen", "green")) +
+  scale_fill_manual(values = c("#0096FF", "blue", "#00FFFF", "red", "orange", "yellow", "purple", "darkgreen", "green")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.4))) +
   scale_x_date(date_breaks = "4 days", date_labels = "%b-%d-%a") +
   theme(text = element_text(size = 16)) +

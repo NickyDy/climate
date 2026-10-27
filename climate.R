@@ -9,40 +9,83 @@ rain_new <- read_html("https://www.stringmeteo.com/synop/prec_month.php") %>%
   html_element("table") %>% 
   html_table() %>%
   filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% 
-  select(2:17, 19:33) %>%
+  select(2:17, 19:34) %>%
   rename(station = X2) %>% 
-  rename_with(~ as.character(c(1:30)), starts_with("X")) %>%
+  rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
     station = str_remove_all(station, "\\)"),
     status = case_when(
-      station %in% c("Видин", "Ловеч", "Разград", "Варна", "вр. Мургаш",
-                     "София", "вр. Мусала", "Пазарджик", "Сливен", "Бургас",
-                     "Сандански", "Кърджали") ~ "official", 
-      station %in% c("с. Гложене", "Варна-Акчелар", "Варна-Боровец", "Климентово",
-                     "Обзор", "Дупница", "Орландовци", "Бояна", "Княжево", "Панагюрище",
-                     "Ямбол", "Петрич", "Стралджа", "Шумен", "с.Рупите") ~ "unofficial",
-      str_detect(station, "Ключ") ~ "unofficial",
+      str_detect(station, "Варна-Акчелар") ~ "unofficial",
+      str_detect(station, "Варна-Боровец") ~ "unofficial",
+      str_detect(station, "Видин") ~ "official",
+      str_detect(station, "Ловеч") ~ "official",
+      str_detect(station, "Разград") ~ "official",
+      str_detect(station, "Варна") ~ "official",
+      str_detect(station, "Мургаш") ~ "official",
+      str_detect(station, "София") ~ "official",
+      str_detect(station, "Мусала") ~ "official",
+      str_detect(station, "Пазарджик") ~ "official",
+      str_detect(station, "Сливен") ~ "official",
+      str_detect(station, "Бургас") ~ "official",
+      str_detect(station, "Сандански") ~ "official",
+      str_detect(station, "Кърджали") ~ "official",
+      str_detect(station, "Гложене") ~ "unofficial",
+      str_detect(station, "Климентово") ~ "unofficial",
+      str_detect(station, "Обзор") ~ "unofficial",
+      str_detect(station, "Дупница") ~ "unofficial",
+      str_detect(station, "Орландовци") ~ "unofficial",
+      str_detect(station, "Бояна") ~ "unofficial",
+      str_detect(station, "Княжево") ~ "unofficial",
+      str_detect(station, "Панагюрище") ~ "unofficial",
+      str_detect(station, "Ямбол") ~ "unofficial",
+      str_detect(station, "Петрич") ~ "unofficial",
+      str_detect(station, "Стралджа") ~ "unofficial",
+      str_detect(station, "Шумен") ~ "unofficial",
       str_detect(station, "Рупите") ~ "unofficial",
+      str_detect(station, "Ключ") ~ "unofficial",
       str_detect(station, "Илинденци") ~ "unofficial",
+      str_detect(station, "Баня") ~ "unofficial",
       str_detect(station, "Конгур") ~ "unofficial"), .after = station,
-    year = 2026, month = 9,
+    year = 2026, month = 10,
     elev = case_when(
-      station == "Видин" ~ 31, station == "Ловеч" ~ 220, str_detect(station, "Конгур") ~ 1284,
-      station == "Разград" ~ 345, station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180,
-      station == "Варна-Боровец" ~ 193, station == "Климентово" ~ 281, station == "Обзор" ~ 20,
-      station == "вр. Мургаш" ~ 1687, station == "Дупница" ~ 551, station == "София" ~ 586,
-      station == "Орландовци" ~ 527, station == "Бояна" ~ 744, station == "Княжево" ~ 700,
-      station == "вр. Мусала" ~ 2925, station == "Панагюрище" ~ 519, station == "Пазарджик" ~ 213,
-      station == "Сливен" ~ 257, station == "Ямбол" ~ 147, station == "Бургас" ~ 16,
-      station == "Петрич" ~ 200, station == "Сандански" ~ 206, station == "Стралджа" ~ 139,
-      station == "Кърджали" ~ 330, station == "Шумен" ~ 218, station == "с. Гложене" ~ 64)) %>%
+      str_detect(station, "Конгур") ~ 1284,
+      str_detect(station, "Варна-Акчелар") ~ 180,
+      str_detect(station, "Варна-Боровец") ~ 193,
+      str_detect(station, "Видин") ~ 31,
+      str_detect(station, "Ловеч") ~ 220,
+      str_detect(station, "Разград") ~ 345,
+      str_detect(station, "Варна") ~ 41,
+      str_detect(station, "Мургаш") ~ 1687,
+      str_detect(station, "София") ~ 586,
+      str_detect(station, "Мусала") ~ 2925,
+      str_detect(station, "Пазарджик") ~ 213,
+      str_detect(station, "Сливен") ~ 257,
+      str_detect(station, "Бургас") ~ 16,
+      str_detect(station, "Сандански") ~ 206,
+      str_detect(station, "Кърджали") ~ 330,
+      str_detect(station, "Гложене") ~ 64,
+      str_detect(station, "Климентово") ~ 281,
+      str_detect(station, "Обзор") ~ 20,
+      str_detect(station, "Дупница") ~ 551,
+      str_detect(station, "Орландовци") ~ 527,
+      str_detect(station, "Бояна") ~ 744,
+      str_detect(station, "Княжево") ~ 700,
+      str_detect(station, "Панагюрище") ~ 519,
+      str_detect(station, "Ямбол") ~ 147,
+      str_detect(station, "Петрич") ~ 200,
+      str_detect(station, "Стралджа") ~ 139,
+      str_detect(station, "Шумен") ~ 218,
+      str_detect(station, "Рупите") ~ 147,
+      str_detect(station, "Ключ") ~ 455,
+      str_detect(station, "Баня") ~ 850,
+      str_detect(station, "Илинденци") ~ 443)) %>%
   mutate(decade = case_when(
     year %in% c("2004", "2005", "2006", "2007", "2008", "2009") ~ "00s",
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
     year %in% c("2020", "2021", "2022", "2023", "2024", "2025", "2026") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
-  pivot_longer(7:36, names_to = "day", values_to = "rain") %>%
+  pivot_longer(7:37, names_to = "day", values_to = "rain") %>%
   mutate(rain = str_remove(rain, "---")) %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(rain = parse_number(rain))
@@ -51,45 +94,125 @@ temp_new <- read_html("https://www.stringmeteo.com/synop/temp_month.php") %>%
   html_element("table") %>% 
   html_table() %>%
   filter(str_detect(X1, "^[:punct:]\\d{1,2}[:punct:]")) %>% 
-  select(2:17, 19:33) %>%
+  select(2:17, 19:34) %>%
   rename(station = X2) %>% 
-  rename_with(~ as.character(c(1:30)), starts_with("X")) %>%
+  rename_with(~ as.character(c(1:31)), starts_with("X")) %>%
   mutate(
     station = str_remove_all(station, "\\("), 
     station = str_remove_all(station, "\\)"),
     station = str_squish(station),
     status = case_when(
-      station %in% c("Видин", "Ловеч", "Разград", "Варна", "вр. Мургаш", "София",
-                     "вр. Мусала", "Пазарджик", "Сливен", "Бургас", "Сандански",
-                     "Кърджали", "Димитровгр. С.") ~ "official", 
-      station %in% c("Гложене", "Варна-Акчелар", "Варна-Боровец", "Климентово",
-                     "Обзор", "Дупница", "Орландовци", "Бояна", "Княжево",
-                     "Панагюрище", "Ямбол", "Петрич", "Турну Мъгуреле Р.",
-                     "Кълъраш Р.", "Одрин Т.", "Рилци", "Добри дол") ~ "unofficial"), .after = station,
-    year = 2026, month = 9,
+      str_detect(station, "Варна-Акчелар") ~ "unofficial",
+      str_detect(station, "Варна-Боровец") ~ "unofficial",
+      str_detect(station, "Видин") ~ "official",
+      str_detect(station, "Враца") ~ "official",
+      str_detect(station, "Ловеч") ~ "official",
+      str_detect(station, "Плевен") ~ "official",
+      str_detect(station, "Търново") ~ "official",
+      str_detect(station, "Разград") ~ "official",
+      str_detect(station, "Варна") ~ "official",
+      str_detect(station, "Шабла") ~ "official",
+      str_detect(station, "Калиакра") ~ "official",
+      str_detect(station, "Мургаш") ~ "official",
+      str_detect(station, "Кюстендил") ~ "official",
+      str_detect(station, "Драгоман") ~ "official",
+      str_detect(station, "София") ~ "official",
+      str_detect(station, "Пловдив") ~ "official",
+      str_detect(station, "Мусала") ~ "official",
+      str_detect(station, "Черни") ~ "official",
+      str_detect(station, "Ботев") ~ "official",
+      str_detect(station, "Пазарджик") ~ "official",
+      str_detect(station, "Чирпан") ~ "official",
+      str_detect(station, "Сливен") ~ "official",
+      str_detect(station, "Елхово") ~ "official",
+      str_detect(station, "Ахтопол") ~ "official",
+      str_detect(station, "Бургас") ~ "official",
+      str_detect(station, "Сандански") ~ "official",
+      str_detect(station, "Рожен") ~ "official",
+      str_detect(station, "Кърджали") ~ "official",
+      str_detect(station, "Димитровгр") ~ "unofficial",
+      str_detect(station, "Гложене") ~ "unofficial",
+      str_detect(station, "Климентово") ~ "unofficial",
+      str_detect(station, "Обзор") ~ "unofficial",
+      str_detect(station, "Дупница") ~ "unofficial",
+      str_detect(station, "Орландовци") ~ "unofficial",
+      str_detect(station, "Бояна") ~ "unofficial",
+      str_detect(station, "Княжево") ~ "unofficial",
+      str_detect(station, "Панагюрище") ~ "unofficial",
+      str_detect(station, "Ямбол") ~ "unofficial",
+      str_detect(station, "Петрич") ~ "unofficial",
+      str_detect(station, "Турну") ~ "unofficial",
+      str_detect(station, "Кълъраш") ~ "unofficial",
+      str_detect(station, "Одрин") ~ "unofficial",
+      str_detect(station, "Рилци") ~ "unofficial",
+      str_detect(station, "Добри") ~ "unofficial"), .after = station,
+    year = 2026, month = 10,
     elev = case_when(
-      station == "Видин" ~ 31, station == "Гложене" ~ 64, station == "Ловеч" ~ 220, station == "Разград" ~ 345,
-      station == "Варна" ~ 41, station == "Варна-Акчелар" ~ 180, station == "Варна-Боровец" ~ 193,
-      station == "Климентово" ~ 281, station == "Обзор" ~ 20, station == "вр. Мургаш" ~ 1687,
-      station == "Дупница" ~ 551, station == "София" ~ 586, station == "Орландовци" ~ 527,
-      station == "Бояна" ~ 744, station == "Княжево" ~ 700, station == "вр. Мусала" ~ 2925,
-      station == "Панагюрище" ~ 519, station == "Пазарджик" ~ 213, station == "Сливен" ~ 257,
-      station == "Ямбол" ~ 147, station == "Бургас" ~ 16, station == "Петрич" ~ 200,
-      station == "Сандански" ~ 206, station == "Кърджали" ~ 330, station == "Добри дол" ~ 118,
-      station == "Турну Мъгуреле Р." ~ 31, station == "Димитровгр. С." ~ 125,
-      station == "Кълъраш Р." ~ 12, station == "Одрин Т." ~ 42, station == "Рилци" ~ 378)) %>%
+      str_detect(station, "Конгур") ~ 1284,
+      str_detect(station, "Варна-Акчелар") ~ 180,
+      str_detect(station, "Варна-Боровец") ~ 193,
+      str_detect(station, "Видин") ~ 31,
+      str_detect(station, "Враца") ~ 344,
+      str_detect(station, "Ловеч") ~ 220,
+      str_detect(station, "Плевен") ~ 116,
+      str_detect(station, "Търново") ~ 220,
+      str_detect(station, "Разград") ~ 345,
+      str_detect(station, "Варна") ~ 41,
+      str_detect(station, "Шабла") ~ 47,
+      str_detect(station, "Калиакра") ~ 60,
+      str_detect(station, "Мургаш") ~ 1687,
+      str_detect(station, "Кюстендил") ~ 560,
+      str_detect(station, "Драгоман") ~ 703,
+      str_detect(station, "София") ~ 586,
+      str_detect(station, "Пловдив") ~ 172,
+      str_detect(station, "Мусала") ~ 2925,
+      str_detect(station, "Черни") ~ 2290,
+      str_detect(station, "Ботев") ~ 2376,
+      str_detect(station, "Пазарджик") ~ 213,
+      str_detect(station, "Чирпан") ~ 168,
+      str_detect(station, "Сливен") ~ 257,
+      str_detect(station, "Елхово") ~ 106,
+      str_detect(station, "Ахтопол") ~ 1,
+      str_detect(station, "Бургас") ~ 16,
+      str_detect(station, "Сандански") ~ 206,
+      str_detect(station, "Рожен") ~ 1759,
+      str_detect(station, "Кърджали") ~ 330,
+      str_detect(station, "Гложене") ~ 64,
+      str_detect(station, "Климентово") ~ 281,
+      str_detect(station, "Обзор") ~ 20,
+      str_detect(station, "Дупница") ~ 551,
+      str_detect(station, "Орландовци") ~ 527,
+      str_detect(station, "Бояна") ~ 744,
+      str_detect(station, "Княжево") ~ 700,
+      str_detect(station, "Панагюрище") ~ 519,
+      str_detect(station, "Ямбол") ~ 147,
+      str_detect(station, "Петрич") ~ 200,
+      str_detect(station, "Стралджа") ~ 139,
+      str_detect(station, "Шумен") ~ 218,
+      str_detect(station, "Рупите") ~ 147,
+      str_detect(station, "Ключ") ~ 455,
+      str_detect(station, "Баня") ~ 850,
+      str_detect(station, "Добри") ~ 118,
+      str_detect(station, "Турну") ~ 31,
+      str_detect(station, "Димитровгр") ~ 125,
+      str_detect(station, "Кълъраш") ~ 12,
+      str_detect(station, "Одрин") ~ 42,
+      str_detect(station, "Рилци") ~ 378)) %>%
   mutate(decade = case_when(
     year %in% c("2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009") ~ "00s",
     year %in% c("2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019") ~ "10s",
     year %in% c("2020", "2021", "2022", "2023", "2024", "2025", "2026") ~ "20s")) %>%
   relocate(decade, .after = status) %>% relocate(elev, .after = status) %>% 
-  pivot_longer(7:36, names_to = "day", values_to = "temp") %>% 
+  pivot_longer(7:37, names_to = "day", values_to = "temp") %>% 
   mutate(temp = str_remove(temp, "---")) %>% 
   mutate(across(c(2, 4:7), as.factor)) %>%
   mutate(temp = parse_number(temp))
 
 rain <- bind_rows(rain, rain_new) %>% 
-  mutate(month = factor(month, levels = c(1:12)))
+  mutate(month = factor(month, levels = c(1:12))) %>% 
+  mutate(station = case_when(str_detect(station, "Мургаш") ~ "вр. Мургаш",
+                             str_detect(station, "Мусала") ~ "вр. Мусала", 
+                             .default = station))
 temp <- bind_rows(temp, temp_new)
 #--------------------------------
 colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", 
@@ -102,7 +225,7 @@ labels_rain <- c("1" = "Много дъждовно", "2" = "Дъждовно", 
                  "4" = "Сухо", "5" = "Много сухо")
 
 temp %>%
-  filter(month %in% c(9), elev < 1200, status == "official") %>%
+  filter(month %in% c(10), elev < 1200, status == "official") %>%
   summarise(m = round(mean(temp, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = mean(m, na.rm = T), iqr = IQR(m), col = case_when(
     m > mm + iqr * 1.2 ~ "1",
@@ -123,7 +246,7 @@ temp %>%
   theme(text = element_text(size = 16), legend.position = "top",
         legend.justification = c(1, 0))
 rain %>% 
-  filter(month %in% c(9), elev < 1200, status == "official") %>% 
+  filter(month %in% c(10), elev < 1200, status == "official") %>% 
   summarise(s = round(sum(rain, na.rm = T), 1), .by = c(station, year)) %>%
   summarise(s = mean(s, na.rm = T), .by = c(year)) %>% 
   mutate(ss = mean(s), iqr = IQR(s), col = case_when(
@@ -535,5 +658,5 @@ rain %>%
   scale_fill_manual(values = c("#F8766D", "#00BFC4"),
                     labels = c("По-сухо от средното", "По-дъждовно от средното"))
 #----------------------------------------------------
-write_parquet(rain, "shiny/climate/rain.parquet")
+write_parquet(rain_n, "shiny/climate/rain.parquet")
 write_parquet(temp, "shiny/climate/temp.parquet")

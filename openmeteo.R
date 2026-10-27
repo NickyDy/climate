@@ -4,7 +4,7 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 #---------------------
-coord <- tibble(city = "sofia") %>% 
+coord <- tibble(city = "oliva", state = "spain") %>% 
   geocode(city, method = "osm")
 
 df <- read_parquet("climate/yambol.parquet")
@@ -86,7 +86,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month %in% c("9"), year == 2026) %>%
+  filter(month %in% c("10"), year == 2026) %>%
   pivot_longer(1:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -123,29 +123,13 @@ df %>%
   theme(text = element_text(size = 16)) +
   facet_wrap(vars(name), ncol = 1, dir = "v", scale = "free_y")
 
-library(fs)
 library(patchwork)
 
-files <- dir_ls("climate", regexp = "parquet")
-df <- map(files, read_parquet) %>%
-  set_names(basename) %>%
-  list_rbind(names_to = "town") %>%
-  mutate(town = str_remove(town, ".parquet$")) %>%
-  select(-time)
-
-df %>% count(town) %>% print(n = Inf)
-
-triplot("musala peak")
-
-triplot <- function(city) {
-  
 m_temp <- df %>% 
-  filter(town == city) %>% 
   summarise(mean_temp = mean(temp_mean, na.rm = T), .by = c(month)) %>% 
   summarise(m_temp = mean(mean_temp))
   
 t <- df %>% 
-  filter(town == city) %>% 
   summarise(mean_temp = mean(temp_mean, na.rm = T), .by = c(month)) %>%
   mutate(col = if_else(mean_temp > 0, "pos", "neg")) %>% 
   ggplot(aes(month, mean_temp, fill = col)) +
@@ -161,13 +145,11 @@ t <- df %>%
         axis.ticks = element_blank())
 
 s_rain <- df %>% 
-  filter(town == city) %>% 
   summarise(sum_rain = sum(prec_sum, na.rm = T), .by = c(year, month)) %>% 
   summarise(mean_rain = mean(sum_rain), .by = c(month)) %>% 
   summarise(s_rain = sum(mean_rain))
 
 r <- df %>% 
-  filter(town == city) %>% 
   summarise(sum_rain = sum(prec_sum, na.rm = T), .by = c(year, month)) %>% 
   summarise(mean_rain = mean(sum_rain), .by = c(month)) %>%
   ggplot(aes(month, mean_rain)) +
@@ -182,13 +164,11 @@ r <- df %>%
         axis.ticks = element_blank())
 
 s_snow <- df %>% 
-  filter(town == city) %>% 
   summarise(sum_snow = sum(snow_sum, na.rm = T), .by = c(year, month)) %>% 
   summarise(mean_snow = mean(sum_snow), .by = c(month)) %>%
   summarise(s_snow = sum(mean_snow))
 
 s <- df %>% 
-  filter(town == city) %>% 
   summarise(sum_snow = sum(snow_sum, na.rm = T), .by = c(year, month)) %>% 
   summarise(mean_snow = mean(sum_snow), .by = c(month)) %>%
   ggplot(aes(month, mean_snow)) +
@@ -204,8 +184,6 @@ s <- df %>%
         axis.ticks.y = element_blank())
 
 t/r/s
-
-}
 #--------------------------------------------
 colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
@@ -282,6 +260,94 @@ df %>%
         plot.title = element_text(color = "blue", face = "bold"),
         legend.justification = c(1, 0)) +
   facet_wrap(vars(label_year))
+#-----------------------------
+month_n <- 10
+
+t_year <- df %>% 
+    filter(month %in% c(1:12)) %>% 
+    summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year, month)) %>%
+    summarise(mean_year = mean(m), .by = year) %>% 
+    mutate(tot_mean = round(mean(mean_year), 1))
+
+month_mean_temp <- df %>% 
+    filter(month == month_n) %>%
+    summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
+    summarise(month_m = mean(m, na.rm = T))
+
+df %>% 
+  filter(month == month_n) %>%
+  summarise(mean_temp = mean(temp_mean, na.rm = T), .by = c(year, month, day)) %>%
+  group_by(year) %>% 
+  mutate(temp_year = mean(mean_temp, na.rm = T), 
+         label_year = paste0(year, ": ", round(temp_year, 1), " (\u00B0C)")) %>% 
+  ungroup() %>%
+  mutate(col = case_when(
+    between(mean_temp, -30, 0) ~ "1",
+    between(mean_temp, 0, 5) ~ "2",
+    between(mean_temp, 15, 25) ~ "4",
+    between(mean_temp, 25, 30) ~ "5",
+    between(mean_temp, 30, 35) ~ "6",
+    .default = "3")) %>%
+  ggplot(aes(day, mean_temp)) +
+  geom_col(aes(fill = col), show.legend = T) +
+  theme(text = element_text(size = 14), legend.position = "top",
+        plot.title = element_text(color = "red", face = "bold"),
+        strip.text.x = element_text(margin = margin(0.02, 0, 0.02, 0, "cm"))) +
+  scale_y_continuous(n.breaks = 2) +
+  scale_x_discrete(breaks = c(1, 5, 10, 15, 20, 25, 30)) +
+  scale_fill_manual(values = c("1" = "blue", "2" = "#0096FF", "3" = "green", 
+                               "4" = "orange", "5" = "red", "6" = "black"),
+                    labels = c("1" = "< 0 \u00B0C", "2" = "0-5 \u00B0C", 
+                               "3" = "5-15 \u00B0C", "4" = "15-25 \u00B0C",
+                               "5" = "25-30 \u00B0C", "6" = "> 30 \u00B0C"),
+                    name = "Легенда: ") +
+  labs(x = "Дата", y = "Средна денонощна температура (\u00B0C)",
+       title = paste0("Средно за месеца за целия период (", first(t_year$year), "-", 
+                      last(t_year$year), " г.): ", round(month_mean_temp$month_m, 1), " (\u00B0C)")) +
+  facet_wrap(vars(label_year), ncol = 5)
+  
+d_year <- df %>%
+    filter(month %in% c(1:12)) %>% 
+    summarise(s = round(sum(rain_sum, na.rm = T), 1), .by = c(year, month)) %>%
+    summarise(sm = round(mean(s, na.rm = T), 1), .by = c(year, month)) %>%
+    summarise(s_year = sum(sm), .by = year) %>% 
+    mutate(tot_mean = round(mean(s_year), 0))
+
+month_mean_rain <- df %>% 
+      filter(month == month_n) %>%
+      summarise(s = round(sum(rain_sum, na.rm = T), 1), .by = c(year, month)) %>%
+      summarise(s = mean(s, na.rm = T), .by = c(year)) %>%
+      summarise(month_m = mean(s))
+
+df %>% 
+  filter(month == month_n) %>%
+  summarise(sum_rain = round(sum(rain_sum, na.rm = T), 1), .by = c(year, month, day)) %>%
+  summarise(mean_year = mean(sum_rain, na.rm = T), .by = c(year, month, day)) %>% 
+  group_by(year) %>% 
+  mutate(rain_year = sum(mean_year, na.rm = T), 
+         label_year = paste0(year, ": ", round(rain_year, 0), " (mm)")) %>% 
+  ungroup() %>%
+  mutate(col = case_when(
+    mean_year <= 5 ~ "1",
+    mean_year <= 15 ~ "2", 
+    mean_year >= 30 ~ "4",
+    .default = "3")) %>%
+  ggplot(aes(day, mean_year)) +
+  geom_col(aes(fill = col), show.legend = T) +
+  theme(text = element_text(size = 14), legend.position = "top",
+        plot.title = element_text(color = "blue", face = "bold"),
+        strip.text.x = element_text(margin = margin(0.02, 0, 0.02, 0, "cm"))) +
+  scale_y_continuous(n.breaks = 2) +
+  scale_x_discrete(breaks = c(1, 5, 10, 15, 20, 25, 30)) +
+  scale_fill_manual(values = c("4" = "blue", "3" = "#0096FF", 
+                               "2" = "green", "1" = "orange"),
+                    labels = c("1" = "< 5 (mm)", "2" = "5-15 (mm)", 
+                               "3" = "15-30 (mm)", "4" = "> 30 (mm)"),
+                    name = "Легенда: ") +
+  labs(x = "Дата", y = "Средно количетсво на валежите (mm)", 
+       title = paste0("Средно за месеца за целия период (", first(d_year$year), "-", 
+                      last(d_year$year), " г.): ", round(month_mean_rain$month_m, 0), " (mm)")) +
+  facet_wrap(vars(label_year), ncol = 5)
 #----------------------------
 #DECADE
 df %>% 
@@ -328,7 +394,7 @@ df %>%
   theme(text = element_text(size = 16), legend.position = "top")
 #---------------------------------------------------------------
 df %>% 
-  filter(month %in% c(9)) %>% 
+  filter(month %in% c(10)) %>% 
   summarise(m = round(mean(temp_mean, na.rm = T), 1), .by = c(year)) %>%
   mutate(mm = round(mean(m, na.rm = T), 1), 
          iqr = IQR(m), col = case_when(
@@ -350,7 +416,7 @@ df %>%
         axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5, hjust = 1), legend.position = "top")
 df %>% 
-  filter(month %in% c(9)) %>% 
+  filter(month %in% c(10)) %>% 
   summarise(s = round(sum(prec_sum, na.rm = T), 1), .by = c(year)) %>%
   mutate(ss = round(mean(s, na.rm = T), 1), 
          iqr = IQR(s), col = case_when(
