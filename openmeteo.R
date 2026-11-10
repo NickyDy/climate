@@ -4,10 +4,10 @@ library(httr2)
 library(tidygeocoder)
 library(tidytext)
 #---------------------
-coord <- tibble(city = "oliva", state = "spain") %>% 
+coord <- tibble(city = "manaus", state = "brazil") %>% 
   geocode(city, method = "osm")
 
-df <- read_parquet("climate/yambol.parquet")
+df <- read_parquet("climate/varna.parquet")
 
 df %>% 
   filter(prec_sum > 30) %>% 
@@ -86,7 +86,7 @@ df %>%
 df %>% 
   drop_na() %>% 
   #filter(year %in% c(1945), location == "Ямбол") %>%
-  filter(month %in% c("10"), year == 2026) %>%
+  filter(month %in% c("11"), year == 2026) %>%
   pivot_longer(1:8) %>%
   mutate(col = case_when(name %in% c("temp_max", "temp_min", "temp_mean") & value > 35 ~ "hot",
                          name %in% c("temp_max", "temp_min", "temp_mean") & value < 0 ~ "cold",
@@ -125,6 +125,8 @@ df %>%
 
 library(patchwork)
 
+triplot <- function(x) {
+  
 m_temp <- df %>% 
   summarise(mean_temp = mean(temp_mean, na.rm = T), .by = c(month)) %>% 
   summarise(m_temp = mean(mean_temp))
@@ -182,8 +184,10 @@ s <- df %>%
   theme(text = element_text(size = 20), plot.title = element_text(color = "#00BFC4", face = "bold"),
         axis.text.y = element_blank(), 
         axis.ticks.y = element_blank())
-
 t/r/s
+}
+
+triplot(x)
 #--------------------------------------------
 colors_temp <- c("1" = "red", "2" = "orange" , "3" = "green", "4" = "#0096FF", "5" = "blue")
 labels_temp <- c("1" = "Много топло", "2" = "Топло" , "3" = "Умерено", "4" = "Хладно", "5" = "Много хладно")
@@ -216,7 +220,7 @@ df %>%
   ggplot(aes(month, m)) +
   geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(m, 1)), size = 3, hjust = -0.1, angle = 90) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.6)), n.breaks = 4) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.6)), n.breaks = 3) +
   scale_fill_manual(values = colors_temp, labels = labels_temp) +
   labs(x = "Месеци", y = "Средна денонощна температура (\u00B0C)", fill = "Легенда:",
        title = paste0("Средно за периода (", first(t_year$year), "-", 
@@ -251,7 +255,7 @@ df %>%
   ggplot(aes(month, s)) +
   geom_col(aes(fill = col), show.legend = T) +
   geom_text(aes(label = round(s, 0)), size = 3, hjust = -0.1, angle = 90) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.6)), n.breaks = 4) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.6)), n.breaks = 3) +
   scale_fill_manual(values = colors_rain, labels = labels_rain) +
   labs(x = "Месеци", y = "Месечно количество на валежите (mm)", fill = "Легенда:",
        title = paste0("Средно за периода (", first(d_year$year), "-", 
@@ -261,7 +265,7 @@ df %>%
         legend.justification = c(1, 0)) +
   facet_wrap(vars(label_year))
 #-----------------------------
-month_n <- 10
+month_n <- 11
 
 t_year <- df %>% 
     filter(month %in% c(1:12)) %>% 
